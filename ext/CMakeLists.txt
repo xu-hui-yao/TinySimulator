@@ -8,6 +8,7 @@ add_subdirectory(glfw)
 add_library(glad STATIC
         glad/src/glad.c
 )
+
 target_include_directories(glad PUBLIC
         glad/include
 )
@@ -15,6 +16,13 @@ target_include_directories(glad PUBLIC
 target_include_directories(tiny-renderer PRIVATE
         glad/include
         glfw/include
+        tinyexr
+        tinygltf
+        stb
+        spdlog
+        imgui
+        glm
+        assimp
 )
 
 target_link_libraries(tiny-renderer PRIVATE
