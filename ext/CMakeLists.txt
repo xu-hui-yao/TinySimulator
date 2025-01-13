@@ -22,7 +22,7 @@ target_include_directories(tiny-renderer PRIVATE
         spdlog
         imgui
         glm
-        assimp
+        assimp/include
 )
 
 target_link_libraries(tiny-renderer PRIVATE
