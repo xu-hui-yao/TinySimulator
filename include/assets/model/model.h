@@ -1,7 +1,6 @@
 #pragma once
 
 #include <assets/texture/texture.h>
-#include <assimp/scene.h>
 #include <core/common.h>
 #include <glad.h>
 #include <glm/glm.hpp>

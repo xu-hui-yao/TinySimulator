@@ -1,59 +1,67 @@
 #include <assets/texture/texture.h>
-#include <iostream>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <stdexcept>
+#include <core/common.h>
+#include <glad.h>
 
-Texture::Texture(const std::string &filename, TextureType texture_type)
-    : id(0), type(texture_type), channel(0), width(0), height(0) {
-    float *raw_data = stbi_loadf(filename.c_str(), &width, &height, &channel, 0);
-    if (!raw_data) {
-        throw std::runtime_error("Failed to load texture: " + filename);
-    }
-    data = std::unique_ptr<float[]>(raw_data);
+Texture::Texture(int height, int width, int channel) noexcept
+    : Resource(filesystem::path()), m_id(0), m_type(ENone), m_channel(channel), m_width(width), m_height(height) {
+    m_data = std::make_unique<float[]>(width * height * channel);
 }
 
-Texture::~Texture() {
-    delete_from_gpu();
+Texture::Texture() noexcept
+    : Resource(filesystem::path()), m_id(0), m_type(ENone), m_channel(0), m_width(0), m_height(0) {}
+
+Texture::~Texture() noexcept {
+    if (m_id != 0) {
+        glDeleteTextures(1, &m_id);
+    }
+    m_id = 0;
 }
 
 Texture::Texture(Texture &&other) noexcept
-    : id(other.id), type(other.type), data(std::move(other.data)), channel(other.channel), width(other.width),
-      height(other.height) {
-    other.id = 0;
+    : Resource(other.m_path), m_id(other.m_id), m_type(other.m_type), m_data(std::move(other.m_data)),
+      m_channel(other.m_channel), m_width(other.m_width), m_height(other.m_height) {
+    other.m_id = 0;
 }
 
 Texture &Texture::operator=(Texture &&other) noexcept {
     if (this != &other) {
-        id       = other.id;
-        type     = other.type;
-        data     = std::move(other.data);
-        channel  = other.channel;
-        width    = other.width;
-        height   = other.height;
-        delete_from_gpu();
+        // Delete our existing GPU texture (if any)
+        unload();
+
+        // Now take the other's data
+        m_id      = other.m_id;
+        m_type    = other.m_type;
+        m_data    = std::move(other.m_data);
+        m_channel = other.m_channel;
+        m_width   = other.m_width;
+        m_height  = other.m_height;
+
+        // Ensure other is nullified
+        other.m_id      = 0;
+        other.m_width   = 0;
+        other.m_height  = 0;
+        other.m_channel = 0;
     }
     return *this;
 }
 
-void Texture::upload_to_gpu() {
-    if (id != 0) {
-        std::cout << "Texture already generated and bound." << std::endl;
+void Texture::upload() noexcept {
+    if (m_id != 0) {
         return;
     }
 
     GLint format;
-    if (channel == 1)
+    if (m_channel == 1)
         format = GL_RED;
-    else if (channel == 3)
+    else if (m_channel == 3)
         format = GL_RGB;
-    else if (channel == 4)
+    else if (m_channel == 4)
         format = GL_RGBA;
     else
-        throw std::runtime_error("Unsupported channel count: " + std::to_string(channel));
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_FLOAT, data.get());
+        throw std::runtime_error("Unsupported m_channel count: " + std::to_string(m_channel));
+    glGenTextures(1, &m_id);
+    glBindTexture(GL_TEXTURE_2D, m_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_FLOAT, m_data.get());
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -61,10 +69,9 @@ void Texture::upload_to_gpu() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void Texture::delete_from_gpu() {
-    if (id != 0) {
-        glDeleteTextures(1, &id);
+void Texture::unload() noexcept {
+    if (m_id != 0) {
+        glDeleteTextures(1, &m_id);
     }
-    id = 0;
+    m_id = 0;
 }
-

@@ -19,7 +19,7 @@ target_include_directories(tiny-renderer PRIVATE
         tinyexr
         tinygltf
         stb
-        spdlog
+        spdlog/include
         imgui
         glm
         assimp/include
