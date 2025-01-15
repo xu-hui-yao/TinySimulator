@@ -28,7 +28,7 @@ struct ResourceTask {
  */
 class AsyncResourceLoader {
 public:
-    virtual ~AsyncResourceLoader() = 0;
+    virtual ~AsyncResourceLoader() = default;
 
     /**
      * @brief Start the background worker threads.

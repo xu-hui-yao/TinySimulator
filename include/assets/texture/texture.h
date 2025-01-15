@@ -154,10 +154,16 @@ enum TextureType {
     EMayaSpecularRoughness = 25,
 };
 
+struct TextureDescriptor : ResourceDescriptor {
+    bool generate_mipmaps = true;
+    GLint wrap_s          = GL_REPEAT;
+    GLint wrap_t          = GL_REPEAT;
+    GLint min_filter      = GL_LINEAR_MIPMAP_LINEAR;
+    GLint mag_filter      = GL_LINEAR;
+};
+
 class Texture : public Resource {
 public:
-    friend class TextureLoader;
-
     Texture(int height, int width, int channel) noexcept;
 
     ~Texture() noexcept override;
@@ -166,7 +172,25 @@ public:
 
     Texture &operator=(Texture &&other) noexcept;
 
-    void upload() noexcept override;
+    float operator()(int row, int col, int channel) const noexcept;
+
+    float &operator()(int row, int col, int channel) noexcept;
+
+    [[nodiscard]] int get_height() const noexcept;
+
+    [[nodiscard]] int get_width() const noexcept;
+
+    [[nodiscard]] int get_channel() const noexcept;
+
+    [[nodiscard]] bool exist_data() const noexcept;
+
+    [[nodiscard]] float *get() const noexcept;
+
+    [[nodiscard]] TextureType get_type() const noexcept;
+
+    void set_type(TextureType type) noexcept;
+
+    void upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) noexcept override;
 
     void unload() noexcept override;
 

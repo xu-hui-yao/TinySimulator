@@ -2,34 +2,34 @@
 
 #include <assets/resource_manager.h>
 #include <assets/texture/async_texture_loader.h>
-#include <unordered_map>
-#include <mutex>
-#include <chrono>
-#include <thread>
 #include <atomic>
+#include <chrono>
+#include <mutex>
+#include <thread>
+#include <unordered_map>
 
 /**
  * @brief A concrete ResourceManager that manages Texture resources.
  */
 class TextureManager : public ResourceManager {
 public:
-    TextureManager();
+    TextureManager() noexcept;
 
-    ~TextureManager() override;
+    ~TextureManager() noexcept override;
 
-    std::shared_ptr<Resource> load_resource(const filesystem::path &path) override;
+    std::shared_ptr<Resource> load_resource(const filesystem::path &path) noexcept override;
 
-    void load_resource_async(const filesystem::path &path) override;
+    void load_resource_async(const filesystem::path &path) noexcept override;
 
-    void remove_resource(const filesystem::path &path) override;
+    void remove_resource(const filesystem::path &path) noexcept override;
 
-    void remove_resource_async(const filesystem::path &path) override;
+    void remove_resource_async(const filesystem::path &path) noexcept override;
 
-    bool exist_resource(const filesystem::path &path) override;
+    bool exist_resource(const filesystem::path &path) noexcept override;
 
-    std::shared_ptr<Resource> get_resource(const filesystem::path &path) override;
+    std::shared_ptr<Resource> get_resource(const filesystem::path &path) noexcept override;
 
-    void enable_hot_reload(bool enable, std::chrono::seconds interval) override;
+    void enable_hot_reload(bool enable, std::chrono::seconds interval) noexcept override;
 
 private:
     struct TextureRecord {
@@ -41,12 +41,10 @@ private:
     std::unordered_map<std::string, TextureRecord> m_texture_map;
     std::mutex m_mutex;
     size_t m_max_texture_count;
-    TextureLoader m_sync_loader;
-    AsyncTextureLoader m_async_loader;
     std::thread m_hot_reload_thread;
     std::atomic<bool> m_stop_hot_reload;
 
-    void hot_reload_thread_func(std::chrono::seconds interval);
+    void hot_reload_thread_func(std::chrono::seconds interval) noexcept;
 
-    void evict_if_needed();
+    void evict_if_needed() noexcept;
 };

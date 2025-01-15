@@ -3,6 +3,10 @@
 #include <core/filesystem/path.h>
 #include <utility>
 
+struct ResourceDescriptor {
+    virtual ~ResourceDescriptor() = default;
+};
+
 /**
  * @brief The base interface for any Resource in the engine.
  *        It only handles the essential load/unload and path retrieval.
@@ -16,7 +20,7 @@ public:
     /**
      * @brief Upload resource data from CPU/GPU.
      */
-    virtual void upload() = 0;
+    virtual void upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) = 0;
 
     /**
      * @brief Unload resource data from CPU/GPU.

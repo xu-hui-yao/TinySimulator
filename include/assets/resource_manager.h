@@ -10,7 +10,7 @@
  */
 class ResourceManager {
 public:
-    virtual ~ResourceManager() = 0;
+    virtual ~ResourceManager() = default;
 
     /**
      * @brief Synchronously load a resource from file and store it internally.

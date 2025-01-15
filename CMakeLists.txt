@@ -26,3 +26,9 @@ target_compile_definitions(tiny-renderer PRIVATE
         $<$<CONFIG:Debug>:M_DEBUG>
         M_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
+
+if (MSVC)
+    add_compile_options("/utf-8")
+endif()
+
+target_compile_options(tiny-renderer PRIVATE "/utf-8")

@@ -1,67 +1,52 @@
 #pragma once
 
+#include <assets/resource_manager.h>
+#include <assets/model/async_model_loader.h>
 #include <assets/model/model.h>
-#include <assets/texture/texture_manager.h>
-#include <assimp/scene.h>
-#include <memory>
-#include <mutex>
-#include <spdlog/spdlog.h>
-#include <string>
 #include <unordered_map>
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <chrono>
 
-///                                                  Assimp
-///                   Scene
-///                  mRootNode------------------------------------------------------------
-///       --------->mMeshes[]储存了真正的Mesh对象--                                         |
-///       |         mMaterials[]               |                                         |
-///       |               |                    |                                     Root Node
-///       |               |                  Mesh                          ---------mChildren[]---------
-///       |               |                mVertices[]                     |        mMeshes[]          |
-///       |             Material           mNormals[]                      |                           |
-///       |         GetTexture(type)       mTextureCoords[]             Child node       ---------->Child node
-///       |                                mFaces[]--------------      mChildren[]-------|         mChildren[]
-///       |                                mMaterialIndex       |      mMeshes[]场景中网格数组的索引   mMeshes[]
-///       |                                                     |          |
-///       |                                                    Face        |
-///       |                                                  mIndices[]    |
-///       |                                                                |
-///       |                                                                |
-///       ------------------------------------------------------------------
-class ModelManager {
+class ModelManager : public ResourceManager {
 public:
-    explicit ModelManager(const std::shared_ptr<TextureManager> &texture_manager);
+  ModelManager();
+  ~ModelManager() override;
 
-    ~ModelManager() = default;
+  std::shared_ptr<Resource> load_resource(const filesystem::path &path) override;
 
-    bool find_model(const std::string &path);
+  void load_resource_async(const filesystem::path &path) override;
 
-    void add_model(const std::string &path);
+  void remove_resource(const filesystem::path &path) override;
 
-    void remove_model(const std::string &path);
+  void remove_resource_async(const filesystem::path &path) override;
 
-    std::shared_ptr<Model> get_model(const std::string &path);
+  bool exist_resource(const filesystem::path &path) override;
+
+  std::shared_ptr<Resource> get_resource(const filesystem::path &path) override;
+
+  void enable_hot_reload(bool enable, std::chrono::seconds interval) override;
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<Model>> m_model_map;
-    std::shared_ptr<TextureManager> m_texture_manager;
-    std::mutex m_model_mutex;
-    // We'll store the directory of the current model so we can use it in load_textures()
-    std::string m_current_directory;
-    std::shared_ptr<spdlog::logger> m_logger;
+  struct ModelRecord {
+    std::shared_ptr<Model> model;
+    std::chrono::system_clock::time_point last_access;
+    std::chrono::system_clock::time_point last_write;
+  };
 
-    // Load model from file using Assimp
-    void load_model(const std::string &path, std::vector<Mesh> &mesh_list);
+  std::unordered_map<std::string, ModelRecord> m_model_map;
+  std::mutex m_mutex;
 
-    // Process each node recursively
-    void process_node(const aiNode *node, const aiScene *scene, std::vector<Mesh> &mesh_list) const;
+  size_t m_max_model_count;
 
-    // Convert aiMesh to our Mesh
-    Mesh process_mesh(aiMesh *mesh, const aiScene *scene) const;
+  ModelLoader m_sync_loader;
+  AsyncModelLoader m_async_loader;
 
-    // Load textures using TextureManager
-    std::vector<std::shared_ptr<Texture>> load_textures(const aiMaterial *material, aiTextureType ai_type,
-                                                        TextureType texture_type) const;
+  std::thread m_hot_reload_thread;
+  std::atomic<bool> m_stop_hot_reload;
 
-    // A helper to get directory from path
-    static std::string get_directory_from_path(const std::string &path);
+  void hot_reload_thread_func(std::chrono::seconds interval);
+
+  void evict_if_needed();
 };

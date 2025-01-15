@@ -1,129 +1,159 @@
+#include <glad.h>
 #include <assets/model/model.h>
-#include <stdexcept>
+#include <utility>
 
-Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices,
-           const std::vector<std::shared_ptr<Texture>> &textures)
-    : vertices(vertices), indices(indices), textures(textures), vbo(0), ebo(0), vao(0) {}
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices,
+           std::vector<std::shared_ptr<Texture>> textures) noexcept
+    : m_vertices(std::move(vertices)), m_indices(std::move(indices)), m_textures(std::move(textures)) {}
 
-Mesh::~Mesh() {
-    if (vbo)
-        glDeleteBuffers(1, &vbo);
-    if (ebo)
-        glDeleteBuffers(1, &ebo);
-    if (vao)
-        glDeleteVertexArrays(1, &vao);
-}
+Mesh::~Mesh() noexcept { unload_from_gpu(); }
 
 Mesh::Mesh(Mesh &&other) noexcept
-    : vertices(std::move(other.vertices)), indices(std::move(other.indices)), textures(std::move(other.textures)),
-      vbo(other.vbo), ebo(other.ebo), vao(other.vao) {
-    other.vbo = 0;
-    other.ebo = 0;
-    other.vao = 0;
+    : m_vertices(std::move(other.m_vertices)), m_indices(std::move(other.m_indices)),
+      m_textures(std::move(other.m_textures)), m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo) {
+    other.m_vao = 0;
+    other.m_vbo = 0;
+    other.m_ebo = 0;
 }
 
 Mesh &Mesh::operator=(Mesh &&other) noexcept {
     if (this != &other) {
-        if (vbo)
-            glDeleteBuffers(1, &vbo);
-        if (ebo)
-            glDeleteBuffers(1, &ebo);
-        if (vao)
-            glDeleteVertexArrays(1, &vao);
+        unload_from_gpu();
 
-        vertices = std::move(other.vertices);
-        indices  = std::move(other.indices);
-        textures = std::move(other.textures);
-        vbo      = other.vbo;
-        ebo      = other.ebo;
-        vao      = other.vao;
+        m_vertices = std::move(other.m_vertices);
+        m_indices  = std::move(other.m_indices);
+        m_textures = std::move(other.m_textures);
+        m_vao      = other.m_vao;
+        m_vbo      = other.m_vbo;
+        m_ebo      = other.m_ebo;
 
-        other.vbo = 0;
-        other.ebo = 0;
-        other.vao = 0;
+        other.m_vao = 0;
+        other.m_vbo = 0;
+        other.m_ebo = 0;
     }
     return *this;
 }
 
-void Mesh::upload_to_gpu() {
-    if (vao != 0 || ebo != 0 || vbo != 0) {
+void Mesh::upload_to_gpu() noexcept {
+    if (m_vao != 0 || m_vbo != 0 || m_ebo != 0) {
         return;
     }
 
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glGenBuffers(1, &ebo);
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo);
+    glGenBuffers(1, &m_ebo);
 
-    if (!vao || !vbo || !ebo) {
-        throw std::runtime_error("Failed to generate OpenGL buffers");
+    if (!m_vao || !m_vbo || !m_ebo) {
+        global::get_logger()->error("Failed to generate OpenGL buffers for Mesh");
+        return;
     }
 
-    glBindVertexArray(vao);
+    glBindVertexArray(m_vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex)), vertices.data(),
+    // VBO
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)), m_vertices.data(),
                  GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLuint)), indices.data(),
+    // EBO
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_indices.size() * sizeof(GLuint)), m_indices.data(),
                  GL_STATIC_DRAW);
 
-    // Vertex attribute: position (layout = 0)
+    // Position => layout = 0
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void *>(offsetof(Vertex, position)));
 
-    // Vertex attribute: normal (layout = 1)
+    // Normal => layout = 1
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
 
-    // Vertex attribute: texture coordinates (layout = 2)
+    // Texture coords => layout = 2
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void *>(offsetof(Vertex, texture_coords)));
 
-    // Vertex attribute: tangent (layout = 3)
+    // Tangent => layout = 3
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void *>(offsetof(Vertex, tangent)));
 
-    // Vertex attribute: bi-tangent (layout = 4)
+    // Bi_tangent => layout = 4
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void *>(offsetof(Vertex, bi_tangent)));
 
-    // Vertex attribute: bone IDs (layout = 5)
+    // Bone IDs => layout = 5
     glEnableVertexAttribArray(5);
     glVertexAttribIPointer(5, M_MAX_BONE_INFLUENCE, GL_INT, sizeof(Vertex),
                            reinterpret_cast<void *>(offsetof(Vertex, bone_ids)));
 
-    // Vertex attribute: bone weights (layout = 6)
+    // Weights => layout = 6
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, M_MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void *>(offsetof(Vertex, weights)));
 
     glBindVertexArray(0);
 
-    for (const auto &texture : textures) {
-        texture->upload();
+    for (auto &texture : m_textures) {
+        auto texture_descriptor = std::make_shared<TextureDescriptor>();
+        if (texture) {
+            texture->upload(texture_descriptor);
+        }
     }
 }
 
-Model::Model(const std::vector<Mesh> &meshes) : meshes(meshes) {}
+void Mesh::unload_from_gpu() noexcept {
+    if (m_vao) {
+        glDeleteVertexArrays(1, &m_vao);
+        m_vao = 0;
+    }
+    if (m_vbo) {
+        glDeleteBuffers(1, &m_vbo);
+        m_vbo = 0;
+    }
+    if (m_ebo) {
+        glDeleteBuffers(1, &m_ebo);
+        m_ebo = 0;
+    }
+}
 
-Model::~Model() = default;
+const std::vector<std::shared_ptr<Texture>> &Mesh::get_textures() const noexcept { return m_textures; }
 
-Model::Model(Model &&other) noexcept : meshes(std::move(other.meshes)) {}
+//
+// ================ Model ================
+//
+Model::Model(filesystem::path path, std::vector<Mesh> meshes) noexcept
+    : Resource(std::move(path)), m_meshes(std::move(meshes)) {}
+
+Model::~Model() noexcept {
+    for (auto &mesh : m_meshes) {
+        mesh.unload_from_gpu();
+    }
+}
+
+Model::Model(Model &&other) noexcept : Resource(other.m_path), m_meshes(std::move(other.m_meshes)) {}
 
 Model &Model::operator=(Model &&other) noexcept {
     if (this != &other) {
-        meshes = std::move(other.meshes);
+        unload();
+        m_path   = other.m_path;
+        m_meshes = std::move(other.m_meshes);
     }
     return *this;
 }
 
-void Model::upload_to_gpu() {
-    for (auto &mesh : meshes) {
+void Model::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) noexcept {
+    for (auto &mesh : m_meshes) {
         mesh.upload_to_gpu();
     }
 }
+
+void Model::unload() noexcept {
+    for (auto &mesh : m_meshes) {
+        mesh.unload_from_gpu();
+    }
+}
+
+const std::vector<Mesh> &Model::get_meshes() const noexcept { return m_meshes; }

@@ -1,3 +1,4 @@
+# glfw
 set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation" FORCE)
@@ -5,6 +6,7 @@ set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target" FORCE)
 
 add_subdirectory(glfw)
 
+# glad
 add_library(glad STATIC
         glad/src/glad.c
 )
@@ -13,8 +15,13 @@ target_include_directories(glad PUBLIC
         glad/include
 )
 
+#assimp
+set(ASSIMP_BUILD_TESTS OFF CACHE INTERNAL "Disable Assimp unit tests" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE INTERNAL "Disable export formats" FORCE)
+add_subdirectory(assimp)
+
+# include
 target_include_directories(tiny-renderer PRIVATE
-        glad/include
         glfw/include
         tinyexr
         tinygltf
@@ -28,4 +35,5 @@ target_include_directories(tiny-renderer PRIVATE
 target_link_libraries(tiny-renderer PRIVATE
         glad
         glfw
+        assimp
 )

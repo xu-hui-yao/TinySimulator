@@ -11,6 +11,8 @@
 #define TINYEXR_IMPLEMENTATION
 #define TINYEXR_USE_MINIZ 0
 #define TINYEXR_USE_STB_ZLIB 1
+#undef min
+#undef max
 #endif
 #include <tinyexr.h>
 
@@ -88,7 +90,7 @@ std::shared_ptr<Texture> TextureLoader::load_exr(const filesystem::path &path) n
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             for (int c = 0; c < channel; ++c) {
-                texture->m_data[(y * width + x) * channel + c] = exr_data[(y * width + x) * channel + c];
+                texture->operator()(y, x, c) = exr_data[(y * width + x) * channel + c];
             }
         }
     }
@@ -112,9 +114,9 @@ std::shared_ptr<Texture> TextureLoader::load_srgb(const filesystem::path &path) 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             for (int c = 0; c < channel; ++c) {
-                auto value = static_cast<float>(img_data[(y * width + x) * channel + c]) / 255.0f;
-                value      = srgb_to_linear(value);
-                texture->m_data[(y * width + x) * channel + c] = value;
+                auto value                   = static_cast<float>(img_data[(y * width + x) * channel + c]) / 255.0f;
+                value                        = srgb_to_linear(value);
+                texture->operator()(y, x, c) = value;
             }
         }
     }
@@ -138,7 +140,7 @@ std::shared_ptr<Texture> TextureLoader::load_hdr(const filesystem::path &path) n
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             for (int c = 0; c < channel; ++c) {
-                texture->m_data[(y * width + x) * channel + c] = hdr_data[(y * width + x) * channel + c];
+                texture->operator()(y, x, c) = hdr_data[(y * width + x) * channel + c];
             }
         }
     }
@@ -147,44 +149,45 @@ std::shared_ptr<Texture> TextureLoader::load_hdr(const filesystem::path &path) n
     return texture;
 }
 
-bool TextureLoader::save_exr(const std::shared_ptr<Texture>& texture, const filesystem::path &path) noexcept {
-    if (!texture->m_data) {
+bool TextureLoader::save_exr(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
+    if (!texture->exist_data()) {
         global::get_logger()->error("No data to save for EXR.");
         return false;
     }
 
-    std::string filename  = path.make_absolute().str();
-    const float *data_ptr = texture->m_data.get();
+    std::string filename = path.make_absolute().str();
 
     EXRHeader exr_header;
     InitEXRHeader(&exr_header);
     EXRImage exr_image;
     InitEXRImage(&exr_image);
 
-    exr_image.num_channels = texture->m_channel;
+    exr_image.num_channels = texture->get_channel();
 
     std::vector<float> images[4];
-    for (int c = 0; c < texture->m_channel; c++) {
-        images[c].resize(static_cast<size_t>(texture->m_width) * texture->m_height);
+    for (int c = 0; c < texture->get_channel(); c++) {
+        images[c].resize(static_cast<size_t>(texture->get_width()) * texture->get_height());
     }
 
     // Default linear
-    for (int i = 0; i < texture->m_width * texture->m_height; i++) {
-        for (int c = 0; c < texture->m_channel; c++) {
-            images[c][i] = data_ptr[i * texture->m_channel + c];
+    for (int y = 0; y < texture->get_height(); ++y) {
+        for (int x = 0; x < texture->get_width(); ++x) {
+            for (int c = 0; c < texture->get_channel(); ++c) {
+                images[c][y * texture->get_width() + x] = texture->operator()(y, x, c);
+            }
         }
     }
 
-    std::vector<float *> image_ptr(texture->m_channel);
-    for (int c = 0; c < texture->m_channel; c++) {
-        image_ptr[texture->m_channel - 1 - c] = images[c].data();
+    std::vector<float *> image_ptr(texture->get_channel());
+    for (int c = 0; c < texture->get_channel(); c++) {
+        image_ptr[texture->get_channel() - 1 - c] = images[c].data();
     }
 
     exr_image.images = reinterpret_cast<unsigned char **>(image_ptr.data());
-    exr_image.width  = texture->m_width;
-    exr_image.height = texture->m_height;
+    exr_image.width  = texture->get_width();
+    exr_image.height = texture->get_height();
 
-    exr_header.num_channels = texture->m_channel;
+    exr_header.num_channels = texture->get_channel();
     exr_header.channels     = static_cast<EXRChannelInfo *>(malloc(sizeof(EXRChannelInfo) * exr_header.num_channels));
     for (int c = 0; c < exr_header.num_channels; c++) {
         snprintf(exr_header.channels[c].name, 255, c == 0 ? "A" : c == 1 ? "B" : c == 2 ? "G" : "R");
@@ -215,28 +218,30 @@ bool TextureLoader::save_exr(const std::shared_ptr<Texture>& texture, const file
     return true;
 }
 
-bool TextureLoader::save_srgb(const std::shared_ptr<Texture>& texture, const filesystem::path &path) noexcept {
-    if (!texture->m_data) {
+bool TextureLoader::save_srgb(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
+    if (!texture->exist_data()) {
         global::get_logger()->error("No data to save for PNG.");
         return false;
     }
 
     std::string filename = path.make_absolute().str();
-    std::vector<unsigned char> out_data(texture->m_width * texture->m_height * texture->m_channel);
+    std::vector<unsigned char> out_data(texture->get_width() * texture->get_height() * texture->get_channel());
 
     // Default srgb
-    for (int i = 0; i < texture->m_width * texture->m_height; i++) {
-        for (int c = 0; c < texture->m_channel; c++) {
-            float value                          = texture->m_data[i * texture->m_channel + c];
-            value                                = linear_to_srgb(value);
-            auto uc                              = static_cast<unsigned char>(value * 255.0f);
-            out_data[i * texture->m_channel + c] = uc;
+    for (int y = 0; y < texture->get_height(); ++y) {
+        for (int x = 0; x < texture->get_width(); ++x) {
+            for (int c = 0; c < texture->get_channel(); ++c) {
+                float value = texture->operator()(y, x, c);
+                value       = linear_to_srgb(value);
+                auto uc     = static_cast<unsigned char>(std::clamp(value * 255.0f, 0.0f, 255.0f));
+                out_data[(y * texture->get_width() + x) * texture->get_channel() + c] = uc;
+            }
         }
     }
 
-    int stride_in_bytes = texture->m_width * texture->m_channel;
-    if (!stbi_write_png(filename.c_str(), texture->m_width, texture->m_height, texture->m_channel, out_data.data(),
-                        stride_in_bytes)) {
+    int stride_in_bytes = texture->get_width() * texture->get_channel();
+    if (!stbi_write_png(filename.c_str(), texture->get_width(), texture->get_height(), texture->get_channel(),
+                        out_data.data(), stride_in_bytes)) {
         global::get_logger()->error("Failed to save PNG file: " + filename);
         return false;
     }
@@ -244,15 +249,15 @@ bool TextureLoader::save_srgb(const std::shared_ptr<Texture>& texture, const fil
     return true;
 }
 
-bool TextureLoader::save_hdr(const std::shared_ptr<Texture>& texture, const filesystem::path &path) noexcept {
-    if (!texture->m_data) {
+bool TextureLoader::save_hdr(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
+    if (!texture->exist_data()) {
         global::get_logger()->error("No data to save for HDR.");
         return false;
     }
 
     std::string filename = path.make_absolute().str();
-    if (!stbi_write_hdr(filename.c_str(), texture->m_width, texture->m_height, texture->m_channel,
-                        texture->m_data.get())) {
+    if (!stbi_write_hdr(filename.c_str(), texture->get_width(), texture->get_height(), texture->get_channel(),
+                        texture->get())) {
         global::get_logger()->error("Failed to save HDR file: " + filename);
         return false;
     }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <assets/async_resource_loader.h>
-#include <assets/texture/texture_loader.h>
+#include <assets/model/model_loader.h>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -9,15 +9,11 @@
 #include <thread>
 #include <vector>
 
-/**
- * @brief An asynchronous loader specialized for Texture-based resources (or any Resource).
- *        Internally uses a queue and a thread pool.
- */
-class AsyncTextureLoader : public AsyncResourceLoader {
+class AsyncModelLoader : public AsyncResourceLoader {
 public:
-    explicit AsyncTextureLoader() noexcept;
+    AsyncModelLoader() noexcept;
 
-    ~AsyncTextureLoader() noexcept override;
+    ~AsyncModelLoader() noexcept override;
 
     void start(size_t num_threads) noexcept override;
 

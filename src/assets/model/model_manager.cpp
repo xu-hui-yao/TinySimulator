@@ -1,197 +1,235 @@
 #include <assets/model/model_manager.h>
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <stdexcept>
+#include <core/common.h>
 
-ModelManager::ModelManager(const std::shared_ptr<TextureManager> &texture_manager)
-    : m_texture_manager(texture_manager) {}
-
-bool ModelManager::find_model(const std::string &path) {
-    std::lock_guard lock(m_model_mutex);
-    return m_model_map.find(path) != m_model_map.end();
+ModelManager::ModelManager() : m_max_model_count(M_MAX_MODEL_COUNT), m_stop_hot_reload(false) {
+    m_async_loader.start(M_MODEL_LOAD_THREAD);
 }
 
-void ModelManager::add_model(const std::string &path) {
-    std::lock_guard lock(m_model_mutex);
-    if (m_model_map.find(path) != m_model_map.end()) {
-        m_logger->info("Model already exists: ", path);
-        return;
+ModelManager::~ModelManager() {
+    if (m_hot_reload_thread.joinable()) {
+        m_stop_hot_reload = true;
+        m_hot_reload_thread.join();
     }
-    std::vector<Mesh> mesh_list;
-    load_model(path, mesh_list);
-
-    // After loading all meshes, create the Model
-    auto model_ptr    = std::make_shared<Model>(mesh_list);
-    m_model_map[path] = model_ptr;
+    m_async_loader.stop();
 }
 
-void ModelManager::remove_model(const std::string &path) {
-    std::lock_guard lock(m_model_mutex);
-    auto it = m_model_map.find(path);
+std::shared_ptr<Resource> ModelManager::load_resource(const filesystem::path &path) {
+    std::lock_guard lock(m_mutex);
+
+    auto abs_str = path.make_absolute().str();
+    auto it      = m_model_map.find(abs_str);
+    if (it != m_model_map.end()) {
+        it->second.last_access = std::chrono::system_clock::now();
+        return it->second.model;
+    }
+
+    auto resource = m_sync_loader.load(path);
+    auto model    = std::dynamic_pointer_cast<Model>(resource);
+    if (!model) {
+        global::get_logger()->error("[ModelManager] Failed to load model: " + abs_str);
+        return nullptr;
+    }
+
+    ModelRecord rec;
+    rec.model       = model;
+    rec.last_access = std::chrono::system_clock::now();
+
+    std::error_code ec;
+    auto file_time = std::filesystem::last_write_time(path.make_absolute().str(), ec);
+    if (!ec) {
+        rec.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+    }
+
+    m_model_map[abs_str] = rec;
+    evict_if_needed();
+
+    return model;
+}
+
+void ModelManager::load_resource_async(const filesystem::path &path) {
+    auto abs_str = path.make_absolute().str();
+    {
+        std::lock_guard lock(m_mutex);
+        if (m_model_map.contains(abs_str)) {
+            return;
+        }
+    }
+
+    // 构建异步任务
+    ResourceTask task;
+    task.task_type = ResourceTaskType::Load;
+    task.file_path = path;
+    task.on_loaded = [this, abs_str](const std::shared_ptr<Resource> &res) {
+        if (!res) {
+            global::get_logger()->error("[ModelManager] Async load returned null: " + abs_str);
+            return;
+        }
+        auto model = std::dynamic_pointer_cast<Model>(res);
+        if (!model) {
+            global::get_logger()->error("[ModelManager] Async load cast to Model failed: " + abs_str);
+            return;
+        }
+
+        std::lock_guard lk(m_mutex);
+        ModelRecord rec;
+        rec.model       = model;
+        rec.last_access = std::chrono::system_clock::now();
+
+        std::error_code ec;
+        auto file_time = std::filesystem::last_write_time(abs_str, ec);
+        if (!ec) {
+            rec.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+        }
+
+        m_model_map[abs_str] = rec;
+        evict_if_needed();
+    };
+
+    m_async_loader.enqueue_task(task);
+}
+
+void ModelManager::remove_resource(const filesystem::path &path) {
+    std::lock_guard lock(m_mutex);
+    auto abs_str = path.make_absolute().str();
+    auto it      = m_model_map.find(abs_str);
     if (it != m_model_map.end()) {
         m_model_map.erase(it);
-    } else {
-        m_logger->info("Model does not exist: ", path);
     }
 }
 
-std::shared_ptr<Model> ModelManager::get_model(const std::string &path) {
-    auto it = m_model_map.find(path);
+void ModelManager::remove_resource_async(const filesystem::path &path) {
+    auto abs_str = path.make_absolute().str();
+
+    ResourceTask task;
+    task.task_type  = ResourceTaskType::Delete;
+    task.file_path  = path;
+    task.on_deleted = [this, abs_str]() {
+        std::lock_guard lock(m_mutex);
+        auto it = m_model_map.find(abs_str);
+        if (it != m_model_map.end()) {
+            m_model_map.erase(it);
+        }
+    };
+
+    m_async_loader.enqueue_task(task);
+}
+
+bool ModelManager::exist_resource(const filesystem::path &path) {
+    std::lock_guard lock(m_mutex);
+    return m_model_map.contains(path.make_absolute().str());
+}
+
+std::shared_ptr<Resource> ModelManager::get_resource(const filesystem::path &path) {
+    std::lock_guard lock(m_mutex);
+    auto abs_str = path.make_absolute().str();
+    auto it      = m_model_map.find(abs_str);
     if (it == m_model_map.end()) {
-        m_logger->error("Model does not exist: ", path);
-        throw std::runtime_error("Model does not exist: " + path);
+        global::get_logger()->error("[ModelManager] No such model: " + abs_str);
+        return nullptr;
     }
-    return it->second;
+    it->second.last_access = std::chrono::system_clock::now();
+    return it->second.model;
 }
 
-void ModelManager::load_model(const std::string &path, std::vector<Mesh> &mesh_list) {
-    // Extract directory from path
-    m_current_directory = get_directory_from_path(path);
-
-    Assimp::Importer importer;
-    // aiProcess_Triangulate: Convert polygons to triangles
-    // aiProcess_FlipUVs: Flip texture coordinates on Y axis
-    // aiProcess_GenNormals: Generate normals if not present
-    // aiProcess_CalcTangentSpace: Generate tangent and bi-tangent
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals |
-                                                       aiProcess_CalcTangentSpace);
-
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        throw std::runtime_error("Assimp error: " + std::string(importer.GetErrorString()));
-    }
-
-    // Recursively process the root node
-    process_node(scene->mRootNode, scene, mesh_list);
-}
-
-void ModelManager::process_node(const aiNode *node, const aiScene *scene, std::vector<Mesh> &mesh_list) const {
-    // For each mesh index in this node, convert to our Mesh and store
-    for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
-        mesh_list.push_back(process_mesh(ai_mesh, scene));
-    }
-    // Recursively process children
-    for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        process_node(node->mChildren[i], scene, mesh_list);
+void ModelManager::enable_hot_reload(bool enable, std::chrono::seconds interval) {
+    if (enable) {
+        if (m_hot_reload_thread.joinable()) {
+            return;
+        }
+        m_stop_hot_reload   = false;
+        m_hot_reload_thread = std::thread(&ModelManager::hot_reload_thread_func, this, interval);
+    } else {
+        if (m_hot_reload_thread.joinable()) {
+            m_stop_hot_reload = true;
+            m_hot_reload_thread.join();
+        }
     }
 }
 
-Mesh ModelManager::process_mesh(aiMesh *mesh, const aiScene *scene) const {
-    std::vector<Vertex> vertices;
-    std::vector<GLuint> indices;
-    std::vector<std::shared_ptr<Texture>> textures;
+void ModelManager::hot_reload_thread_func(std::chrono::seconds interval) {
+    while (!m_stop_hot_reload) {
+        {
+            std::lock_guard lock(m_mutex);
+            for (auto it = m_model_map.begin(); it != m_model_map.end();) {
+                const auto &filename = it->first;
+                auto &record         = it->second;
 
-    // Fill vertices
-    vertices.reserve(mesh->mNumVertices);
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        Vertex vertex{};
+                std::error_code ec;
+                bool file_exists = std::filesystem::exists(filename, ec);
+                if (ec || !file_exists) {
+                    global::get_logger()->info("[ModelManager] Hot reload: file deleted => " + filename);
+                    it = m_model_map.erase(it);
+                    continue;
+                }
 
-        // Position
-        vertex.position.x = mesh->mVertices[i].x;
-        vertex.position.y = mesh->mVertices[i].y;
-        vertex.position.z = mesh->mVertices[i].z;
+                auto current_time =
+                    std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filename, ec));
+                if (!ec && current_time != record.last_write) {
+                    global::get_logger()->info("[ModelManager] Hot reload triggered for " + filename);
 
-        // Normal
-        if (mesh->HasNormals()) {
-            vertex.normal.x = mesh->mNormals[i].x;
-            vertex.normal.y = mesh->mNormals[i].y;
-            vertex.normal.z = mesh->mNormals[i].z;
-        } else {
-            vertex.normal = glm::vec3(0.0f);
+                    ResourceTask task;
+                    task.task_type    = ResourceTaskType::Reload;
+                    task.file_path    = filesystem::path(filename);
+                    task.old_resource = record.model;
+
+                    task.on_loaded = [this, filename](const std::shared_ptr<Resource> &new_res) {
+                        if (!new_res) {
+                            global::get_logger()->error("[ModelManager] Hot reload failed: " + filename);
+                            return;
+                        }
+                        auto new_model = std::dynamic_pointer_cast<Model>(new_res);
+                        if (!new_model) {
+                            global::get_logger()->error("[ModelManager] Hot reload cast failed: " + filename);
+                            return;
+                        }
+
+                        std::lock_guard lk(m_mutex);
+                        auto it2 = m_model_map.find(filename);
+                        if (it2 != m_model_map.end()) {
+                            it2->second.model       = new_model;
+                            it2->second.last_access = std::chrono::system_clock::now();
+
+                            std::error_code ec2;
+                            auto file_time2 = std::filesystem::last_write_time(filename, ec2);
+                            if (!ec2) {
+                                it2->second.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time2);
+                            }
+                        }
+                    };
+
+                    m_async_loader.enqueue_task(task);
+
+                    record.last_write = current_time;
+                }
+
+                ++it;
+            }
         }
 
-        // Texture coordinates
-        if (mesh->mTextureCoords[0]) {
-            vertex.texture_coords.x = mesh->mTextureCoords[0][i].x;
-            vertex.texture_coords.y = mesh->mTextureCoords[0][i].y;
-        } else {
-            vertex.texture_coords = glm::vec2(0.0f);
+        for (int i = 0; i < interval.count(); i++) {
+            if (m_stop_hot_reload) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-
-        // Tangent
-        if (mesh->mTangents) {
-            vertex.tangent.x = mesh->mTangents[i].x;
-            vertex.tangent.y = mesh->mTangents[i].y;
-            vertex.tangent.z = mesh->mTangents[i].z;
-        } else {
-            vertex.tangent = glm::vec3(0.0f);
-        }
-
-        // Bi-tangent
-        if (mesh->mBitangents) {
-            vertex.bi_tangent.x = mesh->mBitangents[i].x;
-            vertex.bi_tangent.y = mesh->mBitangents[i].y;
-            vertex.bi_tangent.z = mesh->mBitangents[i].z;
-        } else {
-            vertex.bi_tangent = glm::vec3(0.0f);
-        }
-
-        // Bone IDs / Weights not handled in this example
-
-        vertices.push_back(vertex);
     }
-
-    // Fill indices
-    indices.reserve(mesh->mNumFaces * 3); // each face is a triangle
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        aiFace face = mesh->mFaces[i];
-        for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            indices.push_back(face.mIndices[j]);
-        }
-    }
-
-    // Get material and load textures
-    if (mesh->mMaterialIndex >= 0) {
-        aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-
-        // Diffuse
-        auto diffuse_maps = load_textures(material, aiTextureType_DIFFUSE, EDiffuse);
-        textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
-
-        // Specular
-        auto specular_maps = load_textures(material, aiTextureType_SPECULAR, ESpecular);
-        textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
-
-        // Normal (aiTextureType_HEIGHT is often used for normal)
-        auto normal_maps = load_textures(material, aiTextureType_HEIGHT, ENormal);
-        textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
-
-        // Height (ambient sometimes used as height map)
-        auto height_maps = load_textures(material, aiTextureType_AMBIENT, EHeight);
-        textures.insert(textures.end(), height_maps.begin(), height_maps.end());
-    }
-
-    return { vertices, indices, textures };
 }
 
-std::vector<std::shared_ptr<Texture>> ModelManager::load_textures(const aiMaterial *material, aiTextureType ai_type,
-                                                                  TextureType texture_type) const {
-    std::vector<std::shared_ptr<Texture>> result;
-    unsigned int count = material->GetTextureCount(ai_type);
-    for (unsigned int i = 0; i < count; i++) {
-        aiString str;
-        material->GetTexture(ai_type, i, &str);
-        // Combine directory and file name
-        std::string texture_path = m_current_directory + "/" + std::string(str.C_Str());
+void ModelManager::evict_if_needed() {
+    if (m_model_map.size() <= m_max_model_count) {
+        return;
+    }
 
-        // Check in texture_manager_ first
-        if (!m_texture_manager->exist_texture(texture_path)) {
-            // If not found, add it
-            m_texture_manager->add_texture(texture_path, texture_type);
+    auto oldest_it   = m_model_map.begin();
+    auto oldest_time = oldest_it->second.last_access;
+
+    for (auto it = std::next(m_model_map.begin()); it != m_model_map.end(); ++it) {
+        if (it->second.last_access < oldest_time) {
+            oldest_it   = it;
+            oldest_time = it->second.last_access;
         }
-        // Then get the shared_ptr
-        auto tex_ptr = m_texture_manager->get_texture(texture_path);
-        result.push_back(tex_ptr);
     }
-    return result;
-}
 
-std::string ModelManager::get_directory_from_path(const std::string &path) {
-    // Simple approach: find last '/' or '\'
-    // (In real project, use a more robust approach or cross-platform library)
-    size_t pos = path.find_last_of("/\\");
-    if (pos == std::string::npos) {
-        return "."; // no directory found
-    }
-    return path.substr(0, pos);
+    global::get_logger()->info("[ModelManager] Evicting model: " + oldest_it->first);
+    m_model_map.erase(oldest_it);
 }

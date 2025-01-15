@@ -19,7 +19,7 @@ std::shared_ptr<spdlog::logger> get_logger() {
     return logger;
 }
 
-std::pair<uint32_t, uint32_t> &get_screen_resolution() {
+std::pair<uint32_t, uint32_t> &get_resolution() {
     static std::pair<uint32_t, uint32_t> resolution;
     return resolution;
 }
