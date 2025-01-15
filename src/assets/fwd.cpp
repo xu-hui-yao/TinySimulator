@@ -5,6 +5,9 @@
 #include <assets/texture/async_texture_loader.h>
 #include <assets/texture/texture_loader.h>
 #include <assets/texture/texture_manager.h>
+#include <assets/shader/async_shader_loader.h>
+#include <assets/shader/shader_loader.h>
+#include <assets/shader/shader_manager.h>
 
 std::shared_ptr<TextureLoader> get_texture_loader() {
     static auto texture_loader = std::make_shared<TextureLoader>();
@@ -34,4 +37,19 @@ std::shared_ptr<AsyncModelLoader> get_async_model_loader() {
 std::shared_ptr<ModelManager> get_model_manager() {
     static auto model_manager = std::make_shared<ModelManager>();
     return model_manager;
+}
+
+std::shared_ptr<ShaderLoader> get_shader_loader() {
+    static auto shader_loader = std::make_shared<ShaderLoader>();
+    return shader_loader;
+}
+
+std::shared_ptr<AsyncShaderLoader> get_async_shader_loader() {
+    static auto async_shader_loader = std::make_shared<AsyncShaderLoader>();
+    return async_shader_loader;
+}
+
+std::shared_ptr<ShaderManager> get_shader_manager() {
+    static auto shader_manager = std::make_shared<ShaderManager>();
+    return shader_manager;
 }

@@ -124,7 +124,7 @@ std::shared_ptr<Resource> ModelManager::get_resource(const filesystem::path &pat
     auto abs_str = path.make_absolute().str();
     auto it      = m_model_map.find(abs_str);
     if (it == m_model_map.end()) {
-        global::get_logger()->error("[ModelManager] No such model: " + abs_str);
+        global::get_logger()->warn("[ModelManager] No such model: " + abs_str);
         return nullptr;
     }
     it->second.last_access = std::chrono::system_clock::now();

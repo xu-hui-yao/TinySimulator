@@ -106,6 +106,24 @@ public:
 #endif
     }
 
+    [[nodiscard]] path replace_extension(const std::string &new_extension) const {
+        if (m_path.empty())
+            throw std::runtime_error("path::replace_extension(): path is empty!");
+
+        path result(*this);
+        std::string &last_segment = result.m_path.back();
+
+        size_t pos = last_segment.find_last_of('.');
+        if (pos != std::string::npos) {
+            last_segment = last_segment.substr(0, pos) +
+                           (new_extension.empty() || new_extension[0] == '.' ? new_extension : "." + new_extension);
+        } else if (!new_extension.empty()) {
+            last_segment += new_extension[0] == '.' ? new_extension : "." + new_extension;
+        }
+
+        return result;
+    }
+
     [[nodiscard]] bool is_file() const {
 #if defined(_WIN32)
         DWORD attr = GetFileAttributesW(wstr().c_str());

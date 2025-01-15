@@ -35,7 +35,7 @@ Mesh &Mesh::operator=(Mesh &&other) noexcept {
 }
 
 void Mesh::upload_to_gpu() noexcept {
-    if (m_vao != 0 || m_vbo != 0 || m_ebo != 0) {
+    if (m_vao != 0 && m_vbo != 0 && m_ebo != 0) {
         return;
     }
 

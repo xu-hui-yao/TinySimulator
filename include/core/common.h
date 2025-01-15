@@ -7,6 +7,8 @@
 #define M_TEXTURE_LOAD_THREAD 1
 #define M_MAX_MODEL_COUNT 512
 #define M_MODEL_LOAD_THREAD 1
+#define M_MAX_SHADER_COUNT 64
+#define M_SHADER_LOAD_THREAD 1
 
 #include <core/filesystem/resolver.h>
 #include <glfw/glfw3.h>
