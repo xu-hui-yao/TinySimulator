@@ -1,6 +1,6 @@
 #include <assets/shader/async_shader_loader.h>
 #include <assets/shader/shader_loader.h>
-#include <core/common.h>
+#include <core/global.h>
 #include <assets/fwd.h>
 
 AsyncShaderLoader::AsyncShaderLoader() noexcept
@@ -83,7 +83,7 @@ std::shared_ptr<Resource> AsyncShaderLoader::load_resource_impl(const ResourceTa
     auto shader_loader = get_shader_loader();
     auto resource = shader_loader->load(task.file_path);
     if (!resource) {
-        global::get_logger()->error("[AsyncShaderLoader] Failed to load: " + task.file_path.str());
+        get_logger()->error("[AsyncShaderLoader] Failed to load: " + task.file_path.str());
     }
     return resource;
 }

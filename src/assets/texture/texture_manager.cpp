@@ -1,6 +1,7 @@
 #include <assets/fwd.h>
 #include <assets/texture/texture_manager.h>
-#include <core/common.h>
+#include <core/global.h>
+#include <filesystem>
 
 TextureManager::TextureManager() noexcept : m_max_texture_count(M_MAX_TEXTURE_COUNT), m_stop_hot_reload(false) {
     get_async_texture_loader()->start(M_TEXTURE_LOAD_THREAD);
@@ -28,7 +29,7 @@ std::shared_ptr<Resource> TextureManager::load_resource(const filesystem::path &
     // not loaded yet, do synchronous load
     auto texture = std::dynamic_pointer_cast<Texture>(get_texture_loader()->load(path));
     if (!texture) {
-        global::get_logger()->error("[TextureManager] Failed to load texture: " + abs_str);
+        get_logger()->error("[TextureManager] Failed to load texture: " + abs_str);
         return nullptr;
     }
 
@@ -38,7 +39,8 @@ std::shared_ptr<Resource> TextureManager::load_resource(const filesystem::path &
     std::error_code ec;
     auto file_time = std::filesystem::last_write_time(path.make_absolute().str(), ec);
     if (!ec) {
-        record.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+        record.last_write = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+            file_time - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
     }
     m_texture_map[abs_str] = record;
 
@@ -63,7 +65,7 @@ void TextureManager::load_resource_async(const filesystem::path &path) noexcept 
     // callback
     task.on_loaded = [this, abs_path](const std::shared_ptr<Resource> &resource) {
         if (!resource) {
-            global::get_logger()->error("[TextureManager] Async load returned null: " + abs_path);
+            get_logger()->error("[TextureManager] Async load returned null: " + abs_path);
             return;
         }
         auto texture = std::dynamic_pointer_cast<Texture>(resource);
@@ -77,7 +79,8 @@ void TextureManager::load_resource_async(const filesystem::path &path) noexcept 
         std::error_code ec;
         auto file_time = std::filesystem::last_write_time(abs_path, ec);
         if (!ec) {
-            record.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+            record.last_write = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                file_time - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
         }
 
         m_texture_map[abs_path] = record;
@@ -126,7 +129,7 @@ std::shared_ptr<Resource> TextureManager::get_resource(const filesystem::path &p
     auto abs_str = path.make_absolute().str();
     auto it      = m_texture_map.find(abs_str);
     if (it == m_texture_map.end()) {
-        global::get_logger()->error("[TextureManager] No such texture: " + abs_str);
+        get_logger()->error("[TextureManager] No such texture: " + abs_str);
         return nullptr;
     }
     it->second.last_access = std::chrono::system_clock::now();
@@ -161,7 +164,7 @@ void TextureManager::hot_reload_thread_func(std::chrono::seconds interval) noexc
                 bool file_exists = std::filesystem::exists(filename, ec);
                 if (ec || !file_exists) {
                     // file deleted => remove
-                    global::get_logger()->info("[TextureManager] Hot reload: file deleted => " + filename);
+                    get_logger()->info("[TextureManager] Hot reload: file deleted => " + filename);
                     it = m_texture_map.erase(it); // erase returns next iterator
                     continue;                     // do not advance it
                 }
@@ -171,7 +174,7 @@ void TextureManager::hot_reload_thread_func(std::chrono::seconds interval) noexc
                     std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filename, ec));
                 if (!ec && current_time != record.last_write) {
                     // file changed => reload
-                    global::get_logger()->info("[TextureManager] Hot reload triggered for " + filename);
+                    get_logger()->info("[TextureManager] Hot reload triggered for " + filename);
 
                     // build a reload task
                     ResourceTask task;
@@ -181,7 +184,7 @@ void TextureManager::hot_reload_thread_func(std::chrono::seconds interval) noexc
 
                     task.on_loaded = [this, filename](const std::shared_ptr<Resource> &new_resource) {
                         if (!new_resource) {
-                            global::get_logger()->error("[TextureManager] Hot reload failed: " + filename);
+                            get_logger()->error("[TextureManager] Hot reload failed: " + filename);
                             return;
                         }
                         auto new_tex = std::dynamic_pointer_cast<Texture>(new_resource);
@@ -234,6 +237,6 @@ void TextureManager::evict_if_needed() noexcept {
             oldest_time = it->second.last_access;
         }
     }
-    global::get_logger()->info("[TextureManager] Evicting texture: " + oldest_it->first);
+    get_logger()->info("[TextureManager] Evicting texture: " + oldest_it->first);
     m_texture_map.erase(oldest_it);
 }

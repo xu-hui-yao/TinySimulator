@@ -1,6 +1,6 @@
 #include <glad.h>
 #include <assets/model/model.h>
-#include <utility>
+#include <core/global.h>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices,
            std::vector<std::shared_ptr<Texture>> textures) noexcept
@@ -44,7 +44,7 @@ void Mesh::upload_to_gpu() noexcept {
     glGenBuffers(1, &m_ebo);
 
     if (!m_vao || !m_vbo || !m_ebo) {
-        global::get_logger()->error("Failed to generate OpenGL buffers for Mesh");
+        get_logger()->error("Failed to generate OpenGL buffers for Mesh");
         return;
     }
 

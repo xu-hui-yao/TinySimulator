@@ -1,6 +1,6 @@
 #include <glad.h>
 #include <assets/shader/shader.h>
-#include <core/common.h>
+#include <core/global.h>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <sstream>
@@ -62,7 +62,7 @@ void Shader::upload(std::shared_ptr<ResourceDescriptor> /*resource_descriptor*/)
         file.close();
         vertex_source = stream.str();
     } catch (...) {
-        global::get_logger()->error("[Shader] Failed to read file: " + m_vertex_path.make_absolute().str());
+        get_logger()->error("[Shader] Failed to read file: " + m_vertex_path.make_absolute().str());
         return;
     }
 
@@ -73,7 +73,7 @@ void Shader::upload(std::shared_ptr<ResourceDescriptor> /*resource_descriptor*/)
         file.close();
         fragment_source = stream.str();
     } catch (...) {
-        global::get_logger()->error("[Shader] Failed to read file: " + m_fragment_path.make_absolute().str());
+        get_logger()->error("[Shader] Failed to read file: " + m_fragment_path.make_absolute().str());
         return;
     }
 
@@ -85,11 +85,11 @@ void Shader::upload(std::shared_ptr<ResourceDescriptor> /*resource_descriptor*/)
             file.close();
             geometry_source = stream.str();
         } catch (...) {
-            global::get_logger()->error("[Shader] Failed to read file: " + m_geometry_path.make_absolute().str());
+            get_logger()->error("[Shader] Failed to read file: " + m_geometry_path.make_absolute().str());
             return;
         }
     } else {
-        global::get_logger()->info("[Shader] Geometry shader file not provided, skipping.");
+        get_logger()->info("[Shader] Geometry shader file not provided, skipping.");
     }
 
     if (m_tess_ctrl_path.exists()) {
@@ -100,11 +100,11 @@ void Shader::upload(std::shared_ptr<ResourceDescriptor> /*resource_descriptor*/)
             file.close();
             tess_ctrl_source = stream.str();
         } catch (...) {
-            global::get_logger()->error("[Shader] Failed to read file: " + m_tess_ctrl_path.make_absolute().str());
+            get_logger()->error("[Shader] Failed to read file: " + m_tess_ctrl_path.make_absolute().str());
             return;
         }
     } else {
-        global::get_logger()->info("[Shader] Tessellation control shader file not provided, skipping.");
+        get_logger()->info("[Shader] Tessellation control shader file not provided, skipping.");
     }
 
     if (m_tess_eval_path.exists()) {
@@ -115,16 +115,16 @@ void Shader::upload(std::shared_ptr<ResourceDescriptor> /*resource_descriptor*/)
             file.close();
             tess_eval_source = stream.str();
         } catch (...) {
-            global::get_logger()->error("[Shader] Failed to read file: " + m_tess_eval_path.make_absolute().str());
+            get_logger()->error("[Shader] Failed to read file: " + m_tess_eval_path.make_absolute().str());
             return;
         }
     } else {
-        global::get_logger()->info("[Shader] Tessellation evaluation shader file not provided, skipping.");
+        get_logger()->info("[Shader] Tessellation evaluation shader file not provided, skipping.");
     }
 
     // compile
     if (!compile_shader(vertex_source, fragment_source, geometry_source, tess_ctrl_source, tess_eval_source)) {
-        global::get_logger()->error("[Shader] Failed to compile shader: " +
+        get_logger()->error("[Shader] Failed to compile shader: " +
                                     m_vertex_path.parent_path().make_absolute().str());
     }
 }
@@ -300,14 +300,14 @@ bool Shader::check_compile_errors(unsigned int object, const ShaderType &type) {
         glGetProgramiv(object, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(object, 1024, nullptr, info_log);
-            global::get_logger()->error("[Shader] Program link error: " + std::string(info_log));
+            get_logger()->error("[Shader] Program link error: " + std::string(info_log));
             return false;
         }
     } else {
         glGetShaderiv(object, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(object, 1024, nullptr, info_log);
-            global::get_logger()->error("[Shader] compile error: " + std::string(info_log));
+            get_logger()->error("[Shader] compile error: " + std::string(info_log));
             return false;
         }
     }

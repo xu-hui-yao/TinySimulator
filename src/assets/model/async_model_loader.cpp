@@ -1,5 +1,6 @@
 #include <assets/model/async_model_loader.h>
 #include <assets/fwd.h>
+#include <core/global.h>
 
 AsyncModelLoader::AsyncModelLoader() noexcept : m_stop_flag(false) {}
 
@@ -77,7 +78,7 @@ void AsyncModelLoader::worker_thread() noexcept {
 std::shared_ptr<Resource> AsyncModelLoader::load_resource_impl(const ResourceTask &task) noexcept {
     auto resource = get_model_loader()->load(task.file_path);
     if (!resource) {
-        global::get_logger()->error("[AsyncModelLoader] Failed to load: " + task.file_path.str());
+        get_logger()->error("[AsyncModelLoader] Failed to load: " + task.file_path.str());
     }
     return resource;
 }

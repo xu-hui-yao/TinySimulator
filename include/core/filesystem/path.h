@@ -74,7 +74,7 @@ public:
 #if defined(_WIN32)
         return GetFileAttributesW(wstr().c_str()) != INVALID_FILE_ATTRIBUTES;
 #else
-        struct stat sb;
+        struct stat sb{};
         return stat(str().c_str(), &sb) == 0;
 #endif
     }
@@ -85,7 +85,7 @@ public:
         if (_wstati64(wstr().c_str(), &sb) != 0)
             throw std::runtime_error("path::file_size(): cannot stat file \"" + str() + "\"!");
 #else
-        struct stat sb;
+        struct stat sb{};
         if (stat(str().c_str(), &sb) != 0)
             throw std::runtime_error("path::file_size(): cannot stat file \"" + str() + "\"!");
 #endif
@@ -99,7 +99,7 @@ public:
             return false;
         return (result & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
-        struct stat sb;
+        struct stat sb{};
         if (stat(str().c_str(), &sb))
             return false;
         return S_ISDIR(sb.st_mode);
@@ -129,7 +129,7 @@ public:
         DWORD attr = GetFileAttributesW(wstr().c_str());
         return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
-        struct stat sb;
+        struct stat sb{};
         if (stat(str().c_str(), &sb))
             return false;
         return S_ISREG(sb.st_mode);
@@ -409,7 +409,7 @@ inline bool create_directories(const path &p) {
 #if defined(_WIN32)
     return SHCreateDirectory(nullptr, p.make_absolute().wstr().c_str()) == ERROR_SUCCESS;
 #else
-    if (create_directory(p.str().c_str()))
+    if (create_directory(p))
         return true;
 
     if (p.empty())

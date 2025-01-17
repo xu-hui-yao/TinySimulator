@@ -1,7 +1,7 @@
 #include <assets/shader/shader_manager.h>
 #include <assets/shader/shader_loader.h>
 #include <assets/shader/async_shader_loader.h>
-#include <core/common.h>
+#include <core/global.h>
 #include <assets/fwd.h>
 #include <filesystem>
 
@@ -33,7 +33,7 @@ std::shared_ptr<Resource> ShaderManager::load_resource(const filesystem::path &p
     auto resource = get_shader_loader()->load(path);
     auto shader   = std::dynamic_pointer_cast<Shader>(resource);
     if (!shader) {
-        global::get_logger()->error("[ShaderManager] Failed to load shader: " + abs_str);
+        get_logger()->error("[ShaderManager] Failed to load shader: " + abs_str);
         return nullptr;
     }
 
@@ -70,12 +70,12 @@ void ShaderManager::load_resource_async(const filesystem::path &path) {
     task.file_path = path;
     task.on_loaded = [this, abs_str](const std::shared_ptr<Resource> &res) {
         if (!res) {
-            global::get_logger()->error("[ShaderManager] Async load returned null: " + abs_str);
+            get_logger()->error("[ShaderManager] Async load returned null: " + abs_str);
             return;
         }
         auto shader = std::dynamic_pointer_cast<Shader>(res);
         if (!shader) {
-            global::get_logger()->error("[ShaderManager] Async load cast to Shader failed: " + abs_str);
+            get_logger()->error("[ShaderManager] Async load cast to Shader failed: " + abs_str);
             return;
         }
 
@@ -135,7 +135,7 @@ std::shared_ptr<Resource> ShaderManager::get_resource(const filesystem::path &pa
     auto abs_str = path.make_absolute().str();
     auto it = m_shader_map.find(abs_str);
     if (it == m_shader_map.end()) {
-        // global::get_logger()->error("[ShaderManager] No such shader: " + abs_str);
+        // get_logger()->error("[ShaderManager] No such shader: " + abs_str);
         return nullptr;
     }
     it->second.last_access = std::chrono::system_clock::now();
@@ -168,7 +168,7 @@ void ShaderManager::hot_reload_thread_func(std::chrono::seconds interval) {
                 std::error_code ec;
                 bool file_exists = std::filesystem::exists(filename, ec);
                 if (ec || !file_exists) {
-                    global::get_logger()->info("[ShaderManager] Hot reload: file deleted => " + filename);
+                    get_logger()->info("[ShaderManager] Hot reload: file deleted => " + filename);
                     it = m_shader_map.erase(it);
                     continue;
                 }
@@ -177,7 +177,7 @@ void ShaderManager::hot_reload_thread_func(std::chrono::seconds interval) {
                     std::chrono::clock_cast<std::chrono::system_clock>(
                             std::filesystem::last_write_time(filename, ec));
                 if (!ec && current_time != record.last_write) {
-                    global::get_logger()->info("[ShaderManager] Hot reload triggered for " + filename);
+                    get_logger()->info("[ShaderManager] Hot reload triggered for " + filename);
 
                     ResourceTask task;
                     task.task_type = ResourceTaskType::Reload;
@@ -185,12 +185,12 @@ void ShaderManager::hot_reload_thread_func(std::chrono::seconds interval) {
                     task.old_resource = record.shader;
                     task.on_loaded = [this, filename](const std::shared_ptr<Resource> &new_res) {
                         if (!new_res) {
-                            global::get_logger()->error("[ShaderManager] Hot reload failed: " + filename);
+                            get_logger()->error("[ShaderManager] Hot reload failed: " + filename);
                             return;
                         }
                         auto new_shader = std::dynamic_pointer_cast<Shader>(new_res);
                         if (!new_shader) {
-                            global::get_logger()->error("[ShaderManager] Hot reload cast failed: " + filename);
+                            get_logger()->error("[ShaderManager] Hot reload cast failed: " + filename);
                             return;
                         }
 
@@ -242,6 +242,6 @@ void ShaderManager::evict_if_needed() {
         }
     }
 
-    global::get_logger()->info("[ShaderManager] Evicting shader: " + oldest_it->first);
+    get_logger()->info("[ShaderManager] Evicting shader: " + oldest_it->first);
     m_shader_map.erase(oldest_it);
 }

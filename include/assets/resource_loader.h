@@ -2,7 +2,6 @@
 
 #include <assets/resource.h>
 #include <filesystem>
-#include <memory>
 #include <core/filesystem/path.h>
 
 /**

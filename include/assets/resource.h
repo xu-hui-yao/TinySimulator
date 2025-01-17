@@ -1,7 +1,6 @@
 #pragma once
 
 #include <core/filesystem/path.h>
-#include <utility>
 
 struct ResourceDescriptor {
     virtual ~ResourceDescriptor() = default;

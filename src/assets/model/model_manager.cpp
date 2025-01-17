@@ -1,5 +1,5 @@
 #include <assets/model/model_manager.h>
-#include <core/common.h>
+#include <core/global.h>
 
 ModelManager::ModelManager() : m_max_model_count(M_MAX_MODEL_COUNT), m_stop_hot_reload(false) {
     m_async_loader.start(M_MODEL_LOAD_THREAD);
@@ -26,7 +26,7 @@ std::shared_ptr<Resource> ModelManager::load_resource(const filesystem::path &pa
     auto resource = m_sync_loader.load(path);
     auto model    = std::dynamic_pointer_cast<Model>(resource);
     if (!model) {
-        global::get_logger()->error("[ModelManager] Failed to load model: " + abs_str);
+        get_logger()->error("[ModelManager] Failed to load model: " + abs_str);
         return nullptr;
     }
 
@@ -61,12 +61,12 @@ void ModelManager::load_resource_async(const filesystem::path &path) {
     task.file_path = path;
     task.on_loaded = [this, abs_str](const std::shared_ptr<Resource> &res) {
         if (!res) {
-            global::get_logger()->error("[ModelManager] Async load returned null: " + abs_str);
+            get_logger()->error("[ModelManager] Async load returned null: " + abs_str);
             return;
         }
         auto model = std::dynamic_pointer_cast<Model>(res);
         if (!model) {
-            global::get_logger()->error("[ModelManager] Async load cast to Model failed: " + abs_str);
+            get_logger()->error("[ModelManager] Async load cast to Model failed: " + abs_str);
             return;
         }
 
@@ -124,7 +124,7 @@ std::shared_ptr<Resource> ModelManager::get_resource(const filesystem::path &pat
     auto abs_str = path.make_absolute().str();
     auto it      = m_model_map.find(abs_str);
     if (it == m_model_map.end()) {
-        global::get_logger()->warn("[ModelManager] No such model: " + abs_str);
+        get_logger()->warn("[ModelManager] No such model: " + abs_str);
         return nullptr;
     }
     it->second.last_access = std::chrono::system_clock::now();
@@ -157,7 +157,7 @@ void ModelManager::hot_reload_thread_func(std::chrono::seconds interval) {
                 std::error_code ec;
                 bool file_exists = std::filesystem::exists(filename, ec);
                 if (ec || !file_exists) {
-                    global::get_logger()->info("[ModelManager] Hot reload: file deleted => " + filename);
+                    get_logger()->info("[ModelManager] Hot reload: file deleted => " + filename);
                     it = m_model_map.erase(it);
                     continue;
                 }
@@ -165,7 +165,7 @@ void ModelManager::hot_reload_thread_func(std::chrono::seconds interval) {
                 auto current_time =
                     std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filename, ec));
                 if (!ec && current_time != record.last_write) {
-                    global::get_logger()->info("[ModelManager] Hot reload triggered for " + filename);
+                    get_logger()->info("[ModelManager] Hot reload triggered for " + filename);
 
                     ResourceTask task;
                     task.task_type    = ResourceTaskType::Reload;
@@ -174,12 +174,12 @@ void ModelManager::hot_reload_thread_func(std::chrono::seconds interval) {
 
                     task.on_loaded = [this, filename](const std::shared_ptr<Resource> &new_res) {
                         if (!new_res) {
-                            global::get_logger()->error("[ModelManager] Hot reload failed: " + filename);
+                            get_logger()->error("[ModelManager] Hot reload failed: " + filename);
                             return;
                         }
                         auto new_model = std::dynamic_pointer_cast<Model>(new_res);
                         if (!new_model) {
-                            global::get_logger()->error("[ModelManager] Hot reload cast failed: " + filename);
+                            get_logger()->error("[ModelManager] Hot reload cast failed: " + filename);
                             return;
                         }
 
@@ -230,6 +230,6 @@ void ModelManager::evict_if_needed() {
         }
     }
 
-    global::get_logger()->info("[ModelManager] Evicting model: " + oldest_it->first);
+    get_logger()->info("[ModelManager] Evicting model: " + oldest_it->first);
     m_model_map.erase(oldest_it);
 }

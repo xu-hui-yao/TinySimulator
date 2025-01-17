@@ -2,7 +2,6 @@
 
 #include <assets/resource.h>
 #include <chrono>
-#include <memory>
 
 /**
  * @brief Base interface for resource manager.

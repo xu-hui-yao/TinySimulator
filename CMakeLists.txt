@@ -3,12 +3,14 @@ project(tiny-renderer LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(tiny-renderer)
+add_executable(tiny-renderer
+        include/core/common.h
+        src/core/common.cpp)
 
 add_subdirectory(ext)
 add_subdirectory(src)
@@ -25,10 +27,10 @@ target_link_libraries(tiny-renderer PRIVATE
 target_compile_definitions(tiny-renderer PRIVATE
         $<$<CONFIG:Debug>:M_DEBUG>
         M_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+        GL_SILENCE_DEPRECATION
 )
 
 if (MSVC)
     add_compile_options("/utf-8")
+    target_compile_options(tiny-renderer PRIVATE "/utf-8")
 endif()
-
-target_compile_options(tiny-renderer PRIVATE "/utf-8")

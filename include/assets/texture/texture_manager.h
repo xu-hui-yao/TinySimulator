@@ -2,9 +2,7 @@
 
 #include <assets/resource_manager.h>
 #include <assets/texture/async_texture_loader.h>
-#include <atomic>
 #include <chrono>
-#include <mutex>
 #include <thread>
 #include <unordered_map>
 
@@ -34,8 +32,8 @@ public:
 private:
     struct TextureRecord {
         std::shared_ptr<Texture> texture;
-        std::chrono::system_clock::time_point last_access;
-        std::chrono::system_clock::time_point last_write;
+        std::chrono::steady_clock::time_point last_access;
+        std::chrono::steady_clock::time_point last_write;
     };
 
     std::unordered_map<std::string, TextureRecord> m_texture_map;

@@ -15,6 +15,7 @@
 #undef max
 #endif
 #include <tinyexr.h>
+#include <core/global.h>
 
 std::shared_ptr<Resource> TextureLoader::load(const filesystem::path &path) {
     std::string ext = path.extension();
@@ -33,7 +34,7 @@ std::shared_ptr<Resource> TextureLoader::load(const filesystem::path &path) {
         return load_hdr(path);
     }
 
-    global::get_logger()->error("Unsupported image format: " + ext);
+    get_logger()->error("Unsupported image format: " + ext);
     return nullptr;
 }
 
@@ -51,7 +52,7 @@ bool TextureLoader::save(std::shared_ptr<Resource> resource, const filesystem::p
     if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "tga") {
         return save_srgb(std::dynamic_pointer_cast<Texture>(resource), path);
     }
-    global::get_logger()->error("Unsupported image format for saving: " + ext);
+    get_logger()->error("Unsupported image format for saving: " + ext);
     return false;
 }
 
@@ -67,7 +68,7 @@ std::shared_ptr<Texture> TextureLoader::load_exr(const filesystem::path &path) n
         if (err) {
             FreeEXRErrorMessage(err);
         }
-        global::get_logger()->error("Failed to parse EXR header: " + error_message);
+        get_logger()->error("Failed to parse EXR header: " + error_message);
         return nullptr;
     }
 
@@ -81,7 +82,7 @@ std::shared_ptr<Texture> TextureLoader::load_exr(const filesystem::path &path) n
         std::string error_message = err ? std::string(err) : "Unknown error";
         if (err)
             FreeEXRErrorMessage(err);
-        global::get_logger()->error("Failed to parse EXR file: " + error_message);
+        get_logger()->error("Failed to parse EXR file: " + error_message);
         return nullptr;
     }
 
@@ -105,7 +106,7 @@ std::shared_ptr<Texture> TextureLoader::load_srgb(const filesystem::path &path) 
 
     unsigned char *img_data = stbi_load(filename.c_str(), &width, &height, &channel, 0);
     if (!img_data) {
-        global::get_logger()->error("Failed to load image: " + std::string(stbi_failure_reason()));
+        get_logger()->error("Failed to load image: " + std::string(stbi_failure_reason()));
         return nullptr;
     }
 
@@ -131,7 +132,7 @@ std::shared_ptr<Texture> TextureLoader::load_hdr(const filesystem::path &path) n
 
     float *hdr_data = stbi_loadf(filename.c_str(), &width, &height, &channel, 0);
     if (!hdr_data) {
-        global::get_logger()->error("Failed to load hdr image: " + std::string(stbi_failure_reason()));
+        get_logger()->error("Failed to load hdr image: " + std::string(stbi_failure_reason()));
         return nullptr;
     }
 
@@ -151,7 +152,7 @@ std::shared_ptr<Texture> TextureLoader::load_hdr(const filesystem::path &path) n
 
 bool TextureLoader::save_exr(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
     if (!texture->exist_data()) {
-        global::get_logger()->error("No data to save for EXR.");
+        get_logger()->error("No data to save for EXR.");
         return false;
     }
 
@@ -207,7 +208,7 @@ bool TextureLoader::save_exr(const std::shared_ptr<Texture> &texture, const file
         if (err) {
             FreeEXRErrorMessage(err);
         }
-        global::get_logger()->error("Failed to save EXR: " + error_message);
+        get_logger()->error("Failed to save EXR: " + error_message);
         return false;
     }
 
@@ -220,7 +221,7 @@ bool TextureLoader::save_exr(const std::shared_ptr<Texture> &texture, const file
 
 bool TextureLoader::save_srgb(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
     if (!texture->exist_data()) {
-        global::get_logger()->error("No data to save for PNG.");
+        get_logger()->error("No data to save for PNG.");
         return false;
     }
 
@@ -242,7 +243,7 @@ bool TextureLoader::save_srgb(const std::shared_ptr<Texture> &texture, const fil
     int stride_in_bytes = texture->get_width() * texture->get_channel();
     if (!stbi_write_png(filename.c_str(), texture->get_width(), texture->get_height(), texture->get_channel(),
                         out_data.data(), stride_in_bytes)) {
-        global::get_logger()->error("Failed to save PNG file: " + filename);
+        get_logger()->error("Failed to save PNG file: " + filename);
         return false;
     }
 
@@ -251,14 +252,14 @@ bool TextureLoader::save_srgb(const std::shared_ptr<Texture> &texture, const fil
 
 bool TextureLoader::save_hdr(const std::shared_ptr<Texture> &texture, const filesystem::path &path) noexcept {
     if (!texture->exist_data()) {
-        global::get_logger()->error("No data to save for HDR.");
+        get_logger()->error("No data to save for HDR.");
         return false;
     }
 
     std::string filename = path.make_absolute().str();
     if (!stbi_write_hdr(filename.c_str(), texture->get_width(), texture->get_height(), texture->get_channel(),
                         texture->get())) {
-        global::get_logger()->error("Failed to save HDR file: " + filename);
+        get_logger()->error("Failed to save HDR file: " + filename);
         return false;
     }
 

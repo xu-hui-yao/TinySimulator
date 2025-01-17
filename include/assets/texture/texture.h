@@ -1,8 +1,6 @@
 #pragma once
 
 #include <assets/resource.h>
-#include <core/common.h>
-#include <memory>
 
 enum TextureType {
     /** Dummy value.

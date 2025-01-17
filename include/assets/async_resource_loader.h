@@ -2,7 +2,6 @@
 
 #include <assets/resource.h>
 #include <functional>
-#include <memory>
 
 /**
  * @brief Task type for asynchronous operations.

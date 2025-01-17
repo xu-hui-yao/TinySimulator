@@ -1,6 +1,6 @@
 #include <glad.h>
 #include <assets/texture/texture.h>
-#include <core/common.h>
+#include <core/global.h>
 
 Texture::Texture(int height, int width, int channel) noexcept
     : Resource(filesystem::path()), m_id(0), m_type(ENone), m_channel(channel), m_width(width), m_height(height) {
@@ -94,7 +94,7 @@ void Texture::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) no
     else if (m_channel == 4)
         format = GL_RGBA;
     else {
-        global::get_logger()->error("Unsupported m_channel count: " + std::to_string(m_channel));
+        get_logger()->error("Unsupported m_channel count: " + std::to_string(m_channel));
         return;
     }
     glGenTextures(1, &m_id);

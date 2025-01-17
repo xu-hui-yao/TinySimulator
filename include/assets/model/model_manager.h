@@ -4,14 +4,13 @@
 #include <assets/model/async_model_loader.h>
 #include <assets/model/model.h>
 #include <unordered_map>
-#include <mutex>
 #include <thread>
-#include <atomic>
 #include <chrono>
 
 class ModelManager : public ResourceManager {
 public:
   ModelManager();
+
   ~ModelManager() override;
 
   std::shared_ptr<Resource> load_resource(const filesystem::path &path) override;
@@ -31,8 +30,8 @@ public:
 private:
   struct ModelRecord {
     std::shared_ptr<Model> model;
-    std::chrono::system_clock::time_point last_access;
-    std::chrono::system_clock::time_point last_write;
+    std::chrono::steady_clock::time_point last_access;
+    std::chrono::steady_clock::time_point last_write;
   };
 
   std::unordered_map<std::string, ModelRecord> m_model_map;

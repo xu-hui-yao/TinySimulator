@@ -2,9 +2,7 @@
 
 #include <assets/async_resource_loader.h>
 #include <assets/model/model_loader.h>
-#include <atomic>
 #include <condition_variable>
-#include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>

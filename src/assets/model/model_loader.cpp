@@ -5,17 +5,18 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <spdlog/spdlog.h>
+#include <core/global.h>
 
 std::shared_ptr<Resource> ModelLoader::load(const filesystem::path &path) {
     auto model = load_from_assimp(path);
     if (!model) {
-        global::get_logger()->error("[ModelLoader] Failed to load model from '{}'" + path.make_absolute().str());
+        get_logger()->error("[ModelLoader] Failed to load model from '{}'" + path.make_absolute().str());
     }
     return model;
 }
 
 bool ModelLoader::save(std::shared_ptr<Resource> resource, const filesystem::path &path) {
-    global::get_logger()->warn("[ModelLoader] Saving models is not implemented");
+    get_logger()->warn("[ModelLoader] Saving models is not implemented");
     return false;
 }
 
@@ -27,7 +28,7 @@ std::shared_ptr<Model> ModelLoader::load_from_assimp(const filesystem::path &pat
                                                            aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        global::get_logger()->error("[ModelLoader] Assimp error: {}", importer.GetErrorString());
+        get_logger()->error("[ModelLoader] Assimp error: {}", importer.GetErrorString());
         return nullptr;
     }
 
