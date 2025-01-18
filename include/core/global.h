@@ -11,6 +11,9 @@
 #define M_SHADER_LOAD_THREAD 1
 
 #include <core/filesystem/resolver.h>
+#if defined(_WIN32)
+#undef APIENTRY
+#endif
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 

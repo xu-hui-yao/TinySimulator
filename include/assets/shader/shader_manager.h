@@ -2,9 +2,11 @@
 
 #include <assets/resource_manager.h>
 #include <assets/shader/shader.h>
+#include <mutex>
 #include <unordered_map>
 #include <thread>
 #include <chrono>
+#include <filesystem>
 
 class ShaderManager : public ResourceManager {
 public:
@@ -29,8 +31,8 @@ public:
 private:
     struct ShaderRecord {
         std::shared_ptr<Shader> shader;
-        std::chrono::steady_clock::time_point last_access;
-        std::chrono::steady_clock::time_point last_write;
+        std::chrono::system_clock::time_point last_access;
+        std::filesystem::file_time_type last_write;
     };
 
     std::unordered_map<std::string, ShaderRecord> m_shader_map;

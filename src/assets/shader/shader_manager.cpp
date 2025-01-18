@@ -47,7 +47,7 @@ std::shared_ptr<Resource> ShaderManager::load_resource(const filesystem::path &p
     std::error_code ec;
     auto file_time = std::filesystem::last_write_time(path.make_absolute().str(), ec);
     if (!ec) {
-        rec.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+        rec.last_write = file_time;
     }
 
     m_shader_map[abs_str] = std::move(rec);
@@ -89,7 +89,7 @@ void ShaderManager::load_resource_async(const filesystem::path &path) {
         std::error_code ec;
         auto file_time = std::filesystem::last_write_time(abs_str, ec);
         if (!ec) {
-            rec.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+            rec.last_write = file_time;
         }
 
         m_shader_map[abs_str] = std::move(rec);
@@ -173,9 +173,7 @@ void ShaderManager::hot_reload_thread_func(std::chrono::seconds interval) {
                     continue;
                 }
 
-                auto current_time =
-                    std::chrono::clock_cast<std::chrono::system_clock>(
-                            std::filesystem::last_write_time(filename, ec));
+                auto current_time = std::filesystem::last_write_time(filename, ec);
                 if (!ec && current_time != record.last_write) {
                     get_logger()->info("[ShaderManager] Hot reload triggered for " + filename);
 
@@ -206,8 +204,7 @@ void ShaderManager::hot_reload_thread_func(std::chrono::seconds interval) {
                             std::error_code ec2;
                             auto file_time2 = std::filesystem::last_write_time(filename, ec2);
                             if (!ec2) {
-                                it2->second.last_write =
-                                    std::chrono::clock_cast<std::chrono::system_clock>(file_time2);
+                                it2->second.last_write = file_time2;
                             }
                         }
                     };

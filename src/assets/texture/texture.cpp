@@ -2,6 +2,10 @@
 #include <assets/texture/texture.h>
 #include <core/global.h>
 
+TextureDescriptor::TextureDescriptor()
+    : generate_mipmaps(true), wrap_s(GL_REPEAT), wrap_t(GL_REPEAT), min_filter(GL_LINEAR_MIPMAP_LINEAR),
+      mag_filter(GL_LINEAR) {}
+
 Texture::Texture(int height, int width, int channel) noexcept
     : Resource(filesystem::path()), m_id(0), m_type(ENone), m_channel(channel), m_width(width), m_height(height) {
     m_data = std::make_unique<float[]>(width * height * channel);
@@ -73,13 +77,9 @@ bool Texture::exist_data() const noexcept { return m_data != nullptr; }
 
 float *Texture::get() const noexcept { return m_data.get(); }
 
-TextureType Texture::get_type() const noexcept {
-    return m_type;
-}
+TextureType Texture::get_type() const noexcept { return m_type; }
 
-void Texture::set_type(TextureType type) noexcept {
-    m_type = type;
-}
+void Texture::set_type(TextureType type) noexcept { m_type = type; }
 
 void Texture::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) noexcept {
     if (m_id != 0) {

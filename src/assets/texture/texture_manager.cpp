@@ -39,8 +39,7 @@ std::shared_ptr<Resource> TextureManager::load_resource(const filesystem::path &
     std::error_code ec;
     auto file_time = std::filesystem::last_write_time(path.make_absolute().str(), ec);
     if (!ec) {
-        record.last_write = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-            file_time - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+        record.last_write = file_time;
     }
     m_texture_map[abs_str] = record;
 
@@ -79,8 +78,7 @@ void TextureManager::load_resource_async(const filesystem::path &path) noexcept 
         std::error_code ec;
         auto file_time = std::filesystem::last_write_time(abs_path, ec);
         if (!ec) {
-            record.last_write = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-                file_time - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+            record.last_write = file_time;
         }
 
         m_texture_map[abs_path] = record;
@@ -170,8 +168,7 @@ void TextureManager::hot_reload_thread_func(std::chrono::seconds interval) noexc
                 }
 
                 // check last write time
-                auto current_time =
-                    std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filename, ec));
+                auto current_time = std::filesystem::last_write_time(filename, ec);
                 if (!ec && current_time != record.last_write) {
                     // file changed => reload
                     get_logger()->info("[TextureManager] Hot reload triggered for " + filename);
@@ -198,7 +195,7 @@ void TextureManager::hot_reload_thread_func(std::chrono::seconds interval) noexc
                             std::error_code ec2;
                             auto file_time2 = std::filesystem::last_write_time(filename, ec2);
                             if (!ec2) {
-                                it2->second.last_write = std::chrono::clock_cast<std::chrono::system_clock>(file_time2);
+                                it2->second.last_write = file_time2;
                             }
                         }
                     };

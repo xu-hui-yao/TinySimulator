@@ -1,6 +1,5 @@
 #include <glad.h>
 #include <assets/model/model.h>
-#include <core/global.h>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices,
            std::vector<std::shared_ptr<Texture>> textures) noexcept

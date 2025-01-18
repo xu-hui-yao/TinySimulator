@@ -9,6 +9,7 @@
 #include <vector>
 
 #if defined(_WIN32)
+#undef APIENTRY
 #include <ShlObj.h>
 #include <windows.h>
 #else

@@ -2,7 +2,6 @@
 
 #include <assets/model/model.h>
 #include <assets/resource_loader.h>
-#include <assets/texture/texture_manager.h>
 #include <assimp/scene.h>
 
 class ModelLoader : public ResourceLoader {

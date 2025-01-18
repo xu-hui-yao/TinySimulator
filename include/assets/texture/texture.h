@@ -153,11 +153,13 @@ enum TextureType {
 };
 
 struct TextureDescriptor : ResourceDescriptor {
-    bool generate_mipmaps = true;
-    GLint wrap_s          = GL_REPEAT;
-    GLint wrap_t          = GL_REPEAT;
-    GLint min_filter      = GL_LINEAR_MIPMAP_LINEAR;
-    GLint mag_filter      = GL_LINEAR;
+    bool generate_mipmaps;
+    int wrap_s;
+    int wrap_t;
+    int min_filter;
+    int mag_filter;
+
+    TextureDescriptor();
 };
 
 class Texture : public Resource {

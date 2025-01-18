@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assets/resource.h>
+#include <core/global.h>
 #include <assets/texture/texture.h>
 #include <glm/glm.hpp>
 #include <vector>

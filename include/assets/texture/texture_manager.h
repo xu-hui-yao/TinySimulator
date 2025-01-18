@@ -32,8 +32,8 @@ public:
 private:
     struct TextureRecord {
         std::shared_ptr<Texture> texture;
-        std::chrono::steady_clock::time_point last_access;
-        std::chrono::steady_clock::time_point last_write;
+        std::chrono::system_clock::time_point last_access;
+        std::filesystem::file_time_type last_write;
     };
 
     std::unordered_map<std::string, TextureRecord> m_texture_map;
