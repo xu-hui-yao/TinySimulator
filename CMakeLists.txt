@@ -8,9 +8,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(tiny-renderer
-        include/core/common.h
-        src/core/common.cpp)
+add_executable(tiny-renderer)
 
 add_subdirectory(ext)
 add_subdirectory(src)

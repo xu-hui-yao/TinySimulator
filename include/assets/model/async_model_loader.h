@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/async_resource_loader.h>
+#include <assets/resource/async_resource_loader.h>
 #include <assets/model/model_loader.h>
 #include <condition_variable>
 #include <queue>

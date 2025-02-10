@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource_manager.h>
+#include <assets/resource/resource_manager.h>
 #include <assets/model/async_model_loader.h>
 #include <assets/model/model.h>
 #include <unordered_map>

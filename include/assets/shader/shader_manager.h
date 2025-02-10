@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource_manager.h>
+#include <assets/resource/resource_manager.h>
 #include <assets/shader/shader.h>
 #include <mutex>
 #include <unordered_map>

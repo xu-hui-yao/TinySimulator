@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource.h>
+#include <assets/resource/resource.h>
 #include <filesystem>
 #include <core/filesystem/path.h>
 

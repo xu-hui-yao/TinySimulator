@@ -4,14 +4,14 @@
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
 
 void mouse_callback(GLFWwindow *window, double x_pos_in, double y_pos_in) {
-    static GLfloat lastX                    = static_cast<GLfloat>(get_resolution().first) / 2.0f;
-    static GLfloat lastY                    = static_cast<GLfloat>(get_resolution().second) / 2.0f;
-    auto xPos                               = static_cast<GLfloat>(x_pos_in);
-    auto yPos                               = static_cast<GLfloat>(y_pos_in);
-    std::get<0>(get_mouse_offset()) = xPos - lastX;
-    std::get<1>(get_mouse_offset()) = lastY - yPos;
-    lastX                                   = xPos;
-    lastY                                   = yPos;
+    static GLfloat last_x                    = static_cast<GLfloat>(get_resolution().first) / 2.0f;
+    static GLfloat last_y                    = static_cast<GLfloat>(get_resolution().second) / 2.0f;
+    auto x_pos                               = static_cast<GLfloat>(x_pos_in);
+    auto y_pos                               = static_cast<GLfloat>(y_pos_in);
+    std::get<0>(get_mouse_offset()) = x_pos - last_x;
+    std::get<1>(get_mouse_offset()) = last_y - y_pos;
+    last_x                                   = x_pos;
+    last_y                                   = y_pos;
 }
 
 void scroll_callback(GLFWwindow *window, double x_offset, double y_offset) {

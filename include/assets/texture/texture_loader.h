@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource_loader.h>
+#include <assets/resource/resource_loader.h>
 #include <assets/texture/texture.h>
 
 class TextureLoader : public ResourceLoader {

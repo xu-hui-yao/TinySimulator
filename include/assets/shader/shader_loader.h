@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource_loader.h>
+#include <assets/resource/resource_loader.h>
 #include <assets/shader/shader.h>
 
 class ShaderLoader : public ResourceLoader {

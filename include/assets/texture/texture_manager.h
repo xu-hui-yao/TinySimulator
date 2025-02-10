@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assets/resource_manager.h>
+#include <assets/resource/resource_manager.h>
 #include <assets/texture/async_texture_loader.h>
 #include <chrono>
 #include <thread>

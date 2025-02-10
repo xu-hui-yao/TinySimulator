@@ -16,6 +16,10 @@
 #endif
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
+#include <cstdint>
+
+constexpr std::uint32_t M_MAX_ENTITIES = 16384;
+constexpr std::uint8_t M_MAX_COMPONENTS = 32;
 
 filesystem::resolver &get_file_resolver();
 
