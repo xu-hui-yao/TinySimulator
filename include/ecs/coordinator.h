@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/event/event_manager.h>
 #include <ecs/component/component_manager.h>
 #include <ecs/entity/entity_manager.h>
 #include <ecs/system/system_manager.h>
@@ -7,7 +8,7 @@
 
 class Coordinator {
 public:
-    void init();
+    Coordinator();
 
     // Entity part
 
@@ -53,8 +54,19 @@ public:
         m_system_manager->set_signature<T>(signature);
     }
 
+    void update_system(float dt) const;
+
+    // Event part
+
+    void add_event_listener(EventId event_id, std::function<void(Event &)> const &listener) const;
+
+    void send_event(Event &event) const;
+
+    void send_event(EventId eventId) const;
+
 private:
     std::unique_ptr<ComponentManager> m_component_manager;
     std::unique_ptr<EntityManager> m_entity_manager;
     std::unique_ptr<SystemManager> m_system_manager;
+    std::unique_ptr<EventManager> m_event_manager;
 };

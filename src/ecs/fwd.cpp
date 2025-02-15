@@ -11,12 +11,10 @@
 #include <ecs/component/render/texture.h>
 #include <ecs/component/ui/text.h>
 
-#include <ecs/system/render/render_system.h>
-
 #include <ecs/fwd.h>
 
 std::shared_ptr<Coordinator> get_coordinator() {
-    static auto coordinator = []() {
+    static auto coordinator = [] {
         auto coordinator = std::make_shared<Coordinator>();
         coordinator->register_component<TransformComponent>();
         coordinator->register_component<TagComponent>();

@@ -1,7 +1,7 @@
 #include <ecs/entity/entity_manager.h>
 
 EntityManager::EntityManager() {
-    for (Entity entity = 0; entity < M_MAX_ENTITIES; ++entity) {
+    for (Entity entity = 1; entity < M_MAX_ENTITIES; ++entity) {
         m_available_entities.push(entity);
     }
 }

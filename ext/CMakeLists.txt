@@ -11,6 +11,22 @@ add_library(glad STATIC
         glad/src/glad.c
 )
 
+# imgui
+add_library(imgui STATIC
+        imgui/imgui.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_tables.cpp
+        imgui/imgui_widgets.cpp
+        imgui/backends/imgui_impl_glfw.cpp
+        imgui/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(imgui PUBLIC
+        imgui
+        imgui/backends
+        glfw/include
+)
+
 target_include_directories(glad PUBLIC
         glad/include
 )
@@ -28,12 +44,15 @@ target_include_directories(tiny-renderer PRIVATE
         stb
         spdlog/include
         imgui
+        imgui/backends
         glm
         assimp/include
+        entt/src
 )
 
 target_link_libraries(tiny-renderer PRIVATE
         glad
         glfw
         assimp
+        imgui
 )

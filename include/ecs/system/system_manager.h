@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/global.h>
+#include <core/fwd.h>
 #include <ecs/system/system.h>
 #include <memory>
 #include <typeindex>
@@ -21,6 +21,8 @@ public:
 
     // Updates system membership when an entity's signature changes
     void entity_signature_changed(Entity entity, Signature entity_signature);
+
+    void update_all(float dt) const;
 
 private:
     std::unordered_map<std::type_index, Signature> m_signatures{};            // System signatures

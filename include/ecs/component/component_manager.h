@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/global.h>
+#include <core/fwd.h>
 #include <ecs/component/component_array.h>
 #include <ecs/entity/entity_manager.h>
 #include <typeindex>

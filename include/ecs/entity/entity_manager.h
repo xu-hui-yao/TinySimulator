@@ -2,11 +2,16 @@
 
 #include <array>
 #include <bitset>
-#include <core/global.h>
+#include <core/fwd.h>
 #include <queue>
+
+constexpr std::uint8_t M_MAX_COMPONENTS = 32;
+constexpr std::uint32_t M_MAX_ENTITIES = 16384;
 
 using Entity    = std::uint32_t;
 using Signature = std::bitset<M_MAX_COMPONENTS>;
+
+constexpr Entity INVALID_ENTITY = 0;
 
 /**
  * Manages entity lifecycle and component signatures.

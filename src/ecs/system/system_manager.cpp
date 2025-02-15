@@ -45,3 +45,10 @@ void SystemManager::entity_signature_changed(Entity entity, Signature entity_sig
         }
     }
 }
+
+void SystemManager::update_all(float dt) const {
+    for (auto const &pair : m_systems) {
+        auto const &system = pair.second;
+        system->update(dt);
+    }
+}
