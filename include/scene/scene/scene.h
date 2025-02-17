@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <scene/camera/camera.h>
 #include <scene/light/light.h>
 #include <scene/model/model.h>
@@ -25,14 +24,20 @@ public:
 
     void set_camera(const std::string &name, const std::shared_ptr<Camera> &camera);
 
-    std::shared_ptr<Camera> get_camera();
+    std::shared_ptr<Camera> get_camera(const std::string &name);
+
+    void set_main_camera(const std::string &name);
 
     void set_light(const std::string &name, const std::shared_ptr<Light> &light);
 
     std::shared_ptr<Light> get_light(const std::string &name);
 
+    void set_shadow_light(const std::string &name);
+
 private:
     std::shared_ptr<Scene> m_parent{nullptr};
+    std::shared_ptr<Camera> m_main_camera{nullptr};
+    std::shared_ptr<Light> m_shadow_light{nullptr};
     std::unordered_map<std::string, std::shared_ptr<Scene>> m_children;
     std::unordered_map<std::string, std::shared_ptr<Model>> m_models;
     std::unordered_map<std::string, std::shared_ptr<Shader>> m_shaders;

@@ -8,7 +8,15 @@ set(CMAKE_CXX_EXTENSIONS ON)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(tiny-renderer)
+add_executable(tiny-renderer
+        src/ecs/component/transform.cpp
+        src/ecs/system/render.cpp
+        src/ecs/system/physics.cpp
+        include/ecs/component/transform.h
+        include/ecs/component/rigidbody.h
+        include/ecs/component/renderable.h
+        include/ecs/system/render.h
+        include/ecs/system/physics.h)
 
 add_subdirectory(ext)
 add_subdirectory(src)
