@@ -2,4 +2,15 @@ cmake-build-debug
 cmake-build-release
 build
 .idea
-.DS_store
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+**/.DS_Store
+*.DS_Store
+._*
+**/.Spotlight-V100
+**/.Trashes
+**/.VolumeIcon.icns
+**/.fseventsd

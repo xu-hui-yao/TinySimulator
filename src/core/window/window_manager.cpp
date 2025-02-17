@@ -5,7 +5,6 @@
 #include <core/event/event_manager.h>
 #include <core/fwd.h>
 #include <core/window/window_manager.h>
-#include <ecs/fwd.h>
 #include <imgui.h>
 
 void WindowManager::init(const std::string &title, int width, int height) {
@@ -83,7 +82,6 @@ void WindowManager::process_events() {
         m_keyboard_state = new_keyboard;
         Event keyboard_event(Events::Window::INPUT);
         keyboard_event.set_param(Events::Window::Input::KEYBOARD_INPUT, m_keyboard_state);
-        get_coordinator()->send_event(keyboard_event);
     }
 
     // Mouse process
@@ -95,7 +93,6 @@ void WindowManager::process_events() {
         m_mouse_state = new_mouse;
         Event mouse_event(Events::Window::INPUT);
         mouse_event.set_param(Events::Window::Input::MOUSE_INPUT, m_mouse_state);
-        get_coordinator()->send_event(mouse_event);
     }
 
     glfwGetCursorPos(m_window.get(), &m_mouse_pos.x, &m_mouse_pos.y);
@@ -103,13 +100,12 @@ void WindowManager::process_events() {
     if (m_mouse_pos != m_last_mouse_pos) {
         Event mouse_event(Events::Window::INPUT);
         mouse_event.set_param(Events::Window::Input::MOUSE_POSITION, m_mouse_pos - m_last_mouse_pos);
-        get_coordinator()->send_event(mouse_event);
         m_last_mouse_pos = m_mouse_pos;
     }
 
     // Close window events
     if (glfwWindowShouldClose(m_window.get())) {
-        get_coordinator()->send_event(Events::Window::QUIT);
+        get_quit() = true;
     }
 }
 
