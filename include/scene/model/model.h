@@ -27,11 +27,23 @@ public:
 
     Mesh &operator=(Mesh &&other) noexcept;
 
+    Mesh(const Mesh &other) = delete;
+
+    Mesh &operator=(const Mesh &other) = delete;
+
     void upload_to_gpu() noexcept;
 
     void unload_from_gpu() noexcept;
 
     [[nodiscard]] const std::vector<std::shared_ptr<Texture>> &get_textures() const noexcept;
+
+    GLuint get_vao() const noexcept;
+
+    GLuint get_vbo() const noexcept;
+
+    GLuint get_ebo() const noexcept;
+
+    size_t get_indices_size() const noexcept;
 
 private:
     std::vector<Vertex> m_vertices;
@@ -43,7 +55,7 @@ private:
 
 class Model : public Resource {
 public:
-    explicit Model(std::filesystem::path path, std::vector<Mesh> meshes) noexcept;
+    explicit Model(std::filesystem::path path, std::vector<std::shared_ptr<Mesh>>  meshes) noexcept;
 
     ~Model() noexcept override;
 
@@ -55,8 +67,8 @@ public:
 
     void unload() noexcept override;
 
-    [[nodiscard]] const std::vector<Mesh> &get_meshes() const noexcept;
+    [[nodiscard]] const std::vector<std::shared_ptr<Mesh>> &get_meshes() const noexcept;
 
 private:
-    std::vector<Mesh> m_meshes;
+    std::vector<std::shared_ptr<Mesh>> m_meshes;
 };

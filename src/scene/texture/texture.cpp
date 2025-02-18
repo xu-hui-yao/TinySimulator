@@ -148,10 +148,6 @@ void Texture::unload() noexcept {
     m_id = 0;
 }
 
-size_t &Texture::get_hash() noexcept { return m_hash; }
-
-size_t Texture::get_hash() const noexcept { return m_hash; }
-
 float srgb_to_linear(float c) noexcept {
     if (c <= 0.04045f)
         return c / 12.92f;

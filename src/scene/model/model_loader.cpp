@@ -31,7 +31,7 @@ std::shared_ptr<Model> ModelLoader::load_from_assimp(const std::filesystem::path
         return nullptr;
     }
 
-    std::vector<Mesh> all_meshes;
+    std::vector<std::shared_ptr<Mesh>> all_meshes;
 
     process_node(scene->mRootNode, scene, all_meshes, path.parent_path());
 
@@ -39,12 +39,12 @@ std::shared_ptr<Model> ModelLoader::load_from_assimp(const std::filesystem::path
     return model;
 }
 
-void ModelLoader::process_node(const aiNode *node, const aiScene *scene, std::vector<Mesh> &mesh_list,
+void ModelLoader::process_node(const aiNode *node, const aiScene *scene, std::vector<std::shared_ptr<Mesh>> &mesh_list,
                                const std::filesystem::path &path) {
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
         Mesh mesh       = process_mesh(ai_mesh, scene, path);
-        mesh_list.push_back(std::move(mesh));
+        mesh_list.push_back(std::make_shared<Mesh>(std::move(mesh)));
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {

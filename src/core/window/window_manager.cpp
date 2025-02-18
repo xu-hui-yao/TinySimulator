@@ -31,6 +31,12 @@ void WindowManager::init(const std::string &title, int width, int height) {
     glfwMakeContextCurrent(m_window.get());
     glfwSwapInterval(1);
 
+    // Disable cursor movement
+    glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported()) {
+        glfwSetInputMode(m_window.get(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+
     // load opengl function pointer
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         get_logger()->error("Failed to initialize GLAD");
@@ -63,45 +69,43 @@ void WindowManager::init(const std::string &title, int width, int height) {
 void WindowManager::update() const { glfwSwapBuffers(m_window.get()); }
 
 void WindowManager::process_events() {
+    Event event(Events::Window::INPUT);
     glfwPollEvents();
 
     // Keyboard process
-    std::bitset<10> new_keyboard;
-    new_keyboard[static_cast<size_t>(InputButtons::W)]     = glfwGetKey(m_window.get(), GLFW_KEY_W);
-    new_keyboard[static_cast<size_t>(InputButtons::A)]     = glfwGetKey(m_window.get(), GLFW_KEY_A);
-    new_keyboard[static_cast<size_t>(InputButtons::S)]     = glfwGetKey(m_window.get(), GLFW_KEY_S);
-    new_keyboard[static_cast<size_t>(InputButtons::D)]     = glfwGetKey(m_window.get(), GLFW_KEY_D);
-    new_keyboard[static_cast<size_t>(InputButtons::Q)]     = glfwGetKey(m_window.get(), GLFW_KEY_Q);
-    new_keyboard[static_cast<size_t>(InputButtons::E)]     = glfwGetKey(m_window.get(), GLFW_KEY_E);
-    new_keyboard[static_cast<size_t>(InputButtons::R)]     = glfwGetKey(m_window.get(), GLFW_KEY_R);
-    new_keyboard[static_cast<size_t>(InputButtons::SPACE)] = glfwGetKey(m_window.get(), GLFW_KEY_SPACE);
-    new_keyboard[static_cast<size_t>(InputButtons::SHIFT)] = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_SHIFT);
-    new_keyboard[static_cast<size_t>(InputButtons::CTRL)]  = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_CONTROL);
-
-    if (new_keyboard != m_keyboard_state) {
-        m_keyboard_state = new_keyboard;
-        Event keyboard_event(Events::Window::INPUT);
-        keyboard_event.set_param(Events::Window::Input::KEYBOARD_INPUT, m_keyboard_state);
-    }
+    m_keyboard_state[static_cast<size_t>(InputButtons::W)]     = glfwGetKey(m_window.get(), GLFW_KEY_W);
+    m_keyboard_state[static_cast<size_t>(InputButtons::A)]     = glfwGetKey(m_window.get(), GLFW_KEY_A);
+    m_keyboard_state[static_cast<size_t>(InputButtons::S)]     = glfwGetKey(m_window.get(), GLFW_KEY_S);
+    m_keyboard_state[static_cast<size_t>(InputButtons::D)]     = glfwGetKey(m_window.get(), GLFW_KEY_D);
+    m_keyboard_state[static_cast<size_t>(InputButtons::Q)]     = glfwGetKey(m_window.get(), GLFW_KEY_Q);
+    m_keyboard_state[static_cast<size_t>(InputButtons::E)]     = glfwGetKey(m_window.get(), GLFW_KEY_E);
+    m_keyboard_state[static_cast<size_t>(InputButtons::R)]     = glfwGetKey(m_window.get(), GLFW_KEY_R);
+    m_keyboard_state[static_cast<size_t>(InputButtons::SPACE)] = glfwGetKey(m_window.get(), GLFW_KEY_SPACE);
+    m_keyboard_state[static_cast<size_t>(InputButtons::SHIFT)] = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_SHIFT);
+    m_keyboard_state[static_cast<size_t>(InputButtons::CTRL)]  = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_CONTROL);
+    event.set_param(Events::Window::Input::KEYBOARD_INPUT, m_keyboard_state);
 
     // Mouse process
-    std::bitset<2> new_mouse;
-    new_mouse[static_cast<size_t>(InputMouses::LEFT)]  = glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_LEFT);
-    new_mouse[static_cast<size_t>(InputMouses::RIGHT)] = glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_RIGHT);
+    m_mouse_state[static_cast<size_t>(InputMouses::LEFT_PRESS)] =
+        glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    m_mouse_state[static_cast<size_t>(InputMouses::RIGHT_PRESS)] =
+        glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+    m_mouse_state[static_cast<size_t>(InputMouses::LEFT_RELEASE)] =
+        glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE;
+    m_mouse_state[static_cast<size_t>(InputMouses::RIGHT_RELEASE)] =
+        glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE;
 
-    if (new_mouse != m_mouse_state) {
-        m_mouse_state = new_mouse;
-        Event mouse_event(Events::Window::INPUT);
-        mouse_event.set_param(Events::Window::Input::MOUSE_INPUT, m_mouse_state);
-    }
+    event.set_param(Events::Window::Input::MOUSE_INPUT, m_mouse_state);
 
-    glfwGetCursorPos(m_window.get(), &m_mouse_pos.x, &m_mouse_pos.y);
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(m_window.get(), &mouse_x, &mouse_y);
+    m_mouse_pos.x = mouse_x;
+    m_mouse_pos.y = mouse_y;
 
-    if (m_mouse_pos != m_last_mouse_pos) {
-        Event mouse_event(Events::Window::INPUT);
-        mouse_event.set_param(Events::Window::Input::MOUSE_POSITION, m_mouse_pos - m_last_mouse_pos);
-        m_last_mouse_pos = m_mouse_pos;
-    }
+    event.set_param(Events::Window::Input::MOUSE_POSITION, m_mouse_pos - m_last_mouse_pos);
+    m_last_mouse_pos = m_mouse_pos;
+
+    get_event_manager()->send_event(event);
 
     // Close window events
     if (glfwWindowShouldClose(m_window.get())) {

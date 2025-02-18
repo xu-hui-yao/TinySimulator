@@ -17,7 +17,7 @@ public:
 private:
     [[nodiscard]] static std::shared_ptr<Model> load_from_assimp(const std::filesystem::path &path);
 
-    static void process_node(const aiNode *node, const aiScene *scene, std::vector<Mesh> &mesh_list,
+    static void process_node(const aiNode *node, const aiScene *scene, std::vector<std::shared_ptr<Mesh>> &mesh_list,
                              const std::filesystem::path &path);
 
     static Mesh process_mesh(aiMesh *mesh, const aiScene *scene, const std::filesystem::path &path);

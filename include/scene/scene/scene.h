@@ -22,11 +22,17 @@ public:
 
     std::shared_ptr<Shader> get_shader(const std::string &name);
 
+    void set_current_shader(const std::string &name);
+
+    std::shared_ptr<Shader> get_current_shader();
+
     void set_camera(const std::string &name, const std::shared_ptr<Camera> &camera);
 
     std::shared_ptr<Camera> get_camera(const std::string &name);
 
     void set_main_camera(const std::string &name);
+
+    std::shared_ptr<Camera> get_main_camera();
 
     void set_light(const std::string &name, const std::shared_ptr<Light> &light);
 
@@ -35,12 +41,15 @@ public:
     void set_shadow_light(const std::string &name);
 
 private:
-    std::shared_ptr<Scene> m_parent{nullptr};
-    std::shared_ptr<Camera> m_main_camera{nullptr};
-    std::shared_ptr<Light> m_shadow_light{nullptr};
+    std::shared_ptr<Scene> m_parent{ nullptr };
+    std::shared_ptr<Camera> m_main_camera{ nullptr };
+    std::shared_ptr<Light> m_shadow_light{ nullptr };
+    std::shared_ptr<Shader> m_current_shader{ nullptr };
     std::unordered_map<std::string, std::shared_ptr<Scene>> m_children;
     std::unordered_map<std::string, std::shared_ptr<Model>> m_models;
     std::unordered_map<std::string, std::shared_ptr<Shader>> m_shaders;
     std::unordered_map<std::string, std::shared_ptr<Camera>> m_cameras;
     std::unordered_map<std::string, std::shared_ptr<Light>> m_lights;
 };
+
+std::shared_ptr<Scene> get_root_scene();

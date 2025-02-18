@@ -31,7 +31,6 @@ std::shared_ptr<Resource> TextureManager::load_resource(const std::filesystem::p
 
     // not loaded yet, do synchronous load
     auto texture = std::dynamic_pointer_cast<Texture>(get_texture_loader()->load(canonical_path));
-    texture->get_hash() = std::hash<std::string>{}(canonical_path);
     if (!texture) {
         get_logger()->error("[TextureManager] Failed to load texture: " + canonical_path);
         return nullptr;

@@ -20,10 +20,10 @@ public:
     [[nodiscard]] std::shared_ptr<GLFWwindow> get_window() const;
 
 private:
-    std::shared_ptr<GLFWwindow> m_window;
-    std::bitset<10> m_keyboard_state;
-    std::bitset<2> m_mouse_state;
-    glm::dvec2 m_mouse_pos{};
-    glm::dvec2 m_last_mouse_pos{};
+    std::shared_ptr<GLFWwindow> m_window{nullptr};
+    std::bitset<10> m_keyboard_state{};
+    std::bitset<4> m_mouse_state{};
+    glm::vec2 m_mouse_pos{};
+    glm::vec2 m_last_mouse_pos{};
     double scroll_x{}, scroll_y{};
 };

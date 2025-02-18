@@ -123,15 +123,23 @@ void Mesh::unload_from_gpu() noexcept {
 
 const std::vector<std::shared_ptr<Texture>> &Mesh::get_textures() const noexcept { return m_textures; }
 
+GLuint Mesh::get_vao() const noexcept { return m_vao; }
+
+GLuint Mesh::get_vbo() const noexcept { return m_vbo; }
+
+GLuint Mesh::get_ebo() const noexcept { return m_ebo; }
+
+size_t Mesh::get_indices_size() const noexcept { return m_indices.size(); }
+
 //
 // ================ Model ================
 //
-Model::Model(std::filesystem::path path, std::vector<Mesh> meshes) noexcept
+Model::Model(std::filesystem::path path, std::vector<std::shared_ptr<Mesh>> meshes) noexcept
     : Resource(std::move(path)), m_meshes(std::move(meshes)) {}
 
 Model::~Model() noexcept {
     for (auto &mesh : m_meshes) {
-        mesh.unload_from_gpu();
+        mesh->unload_from_gpu();
     }
 }
 
@@ -146,16 +154,16 @@ Model &Model::operator=(Model &&other) noexcept {
     return *this;
 }
 
-void Model::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) noexcept {
+void Model::upload(std::shared_ptr<ResourceDescriptor> /**/) noexcept {
     for (auto &mesh : m_meshes) {
-        mesh.upload_to_gpu();
+        mesh->upload_to_gpu();
     }
 }
 
 void Model::unload() noexcept {
     for (auto &mesh : m_meshes) {
-        mesh.unload_from_gpu();
+        mesh->unload_from_gpu();
     }
 }
 
-const std::vector<Mesh> &Model::get_meshes() const noexcept { return m_meshes; }
+const std::vector<std::shared_ptr<Mesh>> &Model::get_meshes() const noexcept { return m_meshes; }

@@ -199,13 +199,8 @@ public:
 
     void unload() noexcept override;
 
-    size_t &get_hash() noexcept;
-
-    [[nodiscard]] size_t get_hash() const noexcept;
-
 private:
     uint32_t m_id;
-    size_t m_hash;
     TextureType m_type;
     std::unique_ptr<float[]> m_data;
     int m_channel, m_width, m_height;

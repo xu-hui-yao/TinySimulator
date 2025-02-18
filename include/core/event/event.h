@@ -5,8 +5,8 @@
 #include <unordered_map>
 
 // Input
-enum class InputButtons { W, A, S, D, Q, E, R, SHIFT, CTRL, SPACE };
-enum class InputMouses { LEFT, RIGHT };
+enum class InputButtons { W = 0, A = 1, S = 2, D = 3, Q = 4, E = 5, R = 6, SHIFT = 7, CTRL = 8, SPACE = 9 };
+enum class InputMouses { LEFT_PRESS = 0, RIGHT_PRESS = 1, LEFT_RELEASE = 2, RIGHT_RELEASE = 3 };
 
 // Events
 using EventId = std::uint32_t;

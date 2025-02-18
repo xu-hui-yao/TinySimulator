@@ -22,3 +22,8 @@ void EventManager::send_event(EventId event_id) {
         listener(event);
     }
 }
+
+std::shared_ptr<EventManager> get_event_manager() {
+    static auto event_manager = std::make_shared<EventManager>();
+    return event_manager;
+}

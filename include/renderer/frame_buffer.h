@@ -1,5 +1,5 @@
 #pragma once
-#include <glad.h>
+
 #include <vector>
 
 class FrameBuffer {
@@ -8,7 +8,7 @@ public:
 
     ~FrameBuffer();
 
-    void bind() const;
+    void bind();
 
     void unbind() const;
 
@@ -19,10 +19,12 @@ public:
 private:
     void check_status();
 
-    GLuint m_fbo = 0;
-    GLuint m_rbo = 0;
+    GLuint m_fbo              = 0;
+    GLuint m_rbo              = 0;
+    GLuint m_depth_attachment = 0;
     std::vector<GLuint> m_color_attachments;
     GLsizei m_width  = 0;
     GLsizei m_height = 0;
-    bool m_is_valid   = false;
+    bool m_is_valid  = false;
+    bool m_bind       = false;
 };

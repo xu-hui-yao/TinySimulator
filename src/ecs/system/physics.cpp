@@ -8,7 +8,7 @@ void PhysicsSystem::update(entt::registry& registry, float delta_time) {
     registry.view<Transform, RigidBody>().each(
         [&](auto& transform, auto& rb) {
             // Apply gravity
-            if (rb.m_use_ravity) {
+            if (rb.m_use_gravity) {
                 rb.m_velocity += gravity * delta_time;
             }
 

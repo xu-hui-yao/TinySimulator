@@ -18,3 +18,5 @@ private:
     std::unordered_map<EventId, std::list<std::function<void(Event &)>>> m_listeners;
     std::mutex m_mutex;
 };
+
+std::shared_ptr<EventManager> get_event_manager();
