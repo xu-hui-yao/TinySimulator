@@ -9,14 +9,22 @@
 
 void WindowManager::init(const std::string &title, int width, int height) {
     // Init GLFW
-    glfwInit();
+    if (!glfwInit()) {
+        get_logger()->error("Failed to initialize GLFW");
+        return;
+    }
+
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
     // Create GLFW window
@@ -83,6 +91,7 @@ void WindowManager::process_events() {
     m_keyboard_state[static_cast<size_t>(InputButtons::SPACE)] = glfwGetKey(m_window.get(), GLFW_KEY_SPACE);
     m_keyboard_state[static_cast<size_t>(InputButtons::SHIFT)] = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_SHIFT);
     m_keyboard_state[static_cast<size_t>(InputButtons::CTRL)]  = glfwGetKey(m_window.get(), GLFW_KEY_LEFT_CONTROL);
+    m_keyboard_state[static_cast<size_t>(InputButtons::ESC)]   = glfwGetKey(m_window.get(), GLFW_KEY_ESCAPE);
     event.set_param(Events::Window::Input::KEYBOARD_INPUT, m_keyboard_state);
 
     // Mouse process
@@ -99,8 +108,8 @@ void WindowManager::process_events() {
 
     double mouse_x, mouse_y;
     glfwGetCursorPos(m_window.get(), &mouse_x, &mouse_y);
-    m_mouse_pos.x = mouse_x;
-    m_mouse_pos.y = mouse_y;
+    m_mouse_pos.x = static_cast<float>(mouse_x);
+    m_mouse_pos.y = static_cast<float>(mouse_y);
 
     event.set_param(Events::Window::Input::MOUSE_POSITION, m_mouse_pos - m_last_mouse_pos);
     m_last_mouse_pos = m_mouse_pos;
@@ -108,7 +117,7 @@ void WindowManager::process_events() {
     get_event_manager()->send_event(event);
 
     // Close window events
-    if (glfwWindowShouldClose(m_window.get())) {
+    if (glfwWindowShouldClose(m_window.get()) || m_keyboard_state[static_cast<size_t>(InputButtons::ESC)]) {
         get_quit() = true;
     }
 }

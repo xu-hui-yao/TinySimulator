@@ -6,7 +6,7 @@
 
 void InputSystem::init() {
     get_event_manager()->add_listener(Events::Window::INPUT, [](Event &event) {
-        auto keys   = event.get_param<std::bitset<10>>(Events::Window::Input::KEYBOARD_INPUT);
+        auto keys   = event.get_param<std::bitset<11>>(Events::Window::Input::KEYBOARD_INPUT);
         auto camera = get_root_scene()->get_main_camera();
 
         if (keys[static_cast<int>(InputButtons::W)])
