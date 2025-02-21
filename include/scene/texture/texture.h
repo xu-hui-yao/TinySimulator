@@ -153,6 +153,8 @@ enum TextureType {
     EMayaSpecularRoughness = 25,
 };
 
+std::string texture_type_to_string(TextureType type);
+
 struct TextureDescriptor : ResourceDescriptor {
     enum Format { e_float, e_uint };
     enum Color { e_linear, e_srgb };
@@ -192,6 +194,8 @@ public:
     [[nodiscard]] float *get() const noexcept;
 
     [[nodiscard]] TextureType get_type() const noexcept;
+
+    [[nodiscard]] uint32_t get_id() const noexcept;
 
     void set_type(TextureType type) noexcept;
 

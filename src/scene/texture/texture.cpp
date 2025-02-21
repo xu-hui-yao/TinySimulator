@@ -3,8 +3,41 @@
 #include <core/fwd.h>
 #include <scene/texture/texture.h>
 
+std::string texture_type_to_string(TextureType type) {
+    // Convert the enum value to its string representation
+    switch (type) {
+        case ENone: return "None";
+        case EDiffuse: return "Diffuse";
+        case ESpecular: return "Specular";
+        case EAmbient: return "Ambient";
+        case EEmitter: return "Emitter";
+        case EHeight: return "Height";
+        case ENormal: return "Normal";
+        case EShininess: return "Shininess";
+        case EOpacity: return "Opacity";
+        case EDisplacement: return "Displacement";
+        case ELightMap: return "LightMap";
+        case EReflection: return "Reflection";
+        case EBaseColor: return "BaseColor";
+        case ENormalCamera: return "NormalCamera";
+        case EEmissionColor: return "EmissionColor";
+        case EMetallic: return "Metallic";
+        case EDiffuseRoughness: return "DiffuseRoughness";
+        case EAmbientOcclusion: return "AmbientOcclusion";
+        case EUnknown: return "Unknown";
+        case ESheen: return "Sheen";
+        case EClearCoat: return "ClearCoat";
+        case ETransmission: return "Transmission";
+        case EMayaBase: return "MayaBase";
+        case EMayaSpecular: return "MayaSpecular";
+        case EMayaSpecularColor: return "MayaSpecularColor";
+        case EMayaSpecularRoughness: return "MayaSpecularRoughness";
+        default: return "Unknown";
+    }
+}
+
 TextureDescriptor::TextureDescriptor()
-    : format(e_uint), color(e_srgb), generate_mipmaps(true), wrap_s(GL_REPEAT), wrap_t(GL_REPEAT),
+    : format(e_uint), color(e_linear), generate_mipmaps(true), wrap_s(GL_REPEAT), wrap_t(GL_REPEAT),
       min_filter(GL_LINEAR_MIPMAP_LINEAR), mag_filter(GL_LINEAR) {}
 
 Texture::Texture(int height, int width, int channel) noexcept
@@ -68,6 +101,8 @@ bool Texture::exist_data() const noexcept { return m_data != nullptr; }
 float *Texture::get() const noexcept { return m_data.get(); }
 
 TextureType Texture::get_type() const noexcept { return m_type; }
+
+uint32_t Texture::get_id() const noexcept { return m_id; }
 
 void Texture::set_type(TextureType type) noexcept { m_type = type; }
 

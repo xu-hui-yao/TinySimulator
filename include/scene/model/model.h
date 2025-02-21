@@ -37,13 +37,13 @@ public:
 
     [[nodiscard]] const std::vector<std::shared_ptr<Texture>> &get_textures() const noexcept;
 
-    GLuint get_vao() const noexcept;
+    [[nodiscard]] GLuint get_vao() const noexcept;
 
-    GLuint get_vbo() const noexcept;
+    [[nodiscard]] GLuint get_vbo() const noexcept;
 
-    GLuint get_ebo() const noexcept;
+    [[nodiscard]] GLuint get_ebo() const noexcept;
 
-    size_t get_indices_size() const noexcept;
+    [[nodiscard]] size_t get_indices_size() const noexcept;
 
 private:
     std::vector<Vertex> m_vertices;
