@@ -5,6 +5,7 @@
 #include <ecs/system/render.h>
 #include <scene/model/model_manager.h>
 #include <scene/scene/scene.h>
+#include <memory>
 
 int main() {
     get_window_manager()->init("test", 1920, 1080);

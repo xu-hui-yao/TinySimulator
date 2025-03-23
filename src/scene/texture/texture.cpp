@@ -6,39 +6,66 @@
 std::string texture_type_to_string(TextureType type) {
     // Convert the enum value to its string representation
     switch (type) {
-        case ENone: return "None";
-        case EDiffuse: return "Diffuse";
-        case ESpecular: return "Specular";
-        case EAmbient: return "Ambient";
-        case EEmitter: return "Emitter";
-        case EHeight: return "Height";
-        case ENormal: return "Normal";
-        case EShininess: return "Shininess";
-        case EOpacity: return "Opacity";
-        case EDisplacement: return "Displacement";
-        case ELightMap: return "LightMap";
-        case EReflection: return "Reflection";
-        case EBaseColor: return "BaseColor";
-        case ENormalCamera: return "NormalCamera";
-        case EEmissionColor: return "EmissionColor";
-        case EMetallic: return "Metallic";
-        case EDiffuseRoughness: return "DiffuseRoughness";
-        case EAmbientOcclusion: return "AmbientOcclusion";
-        case EUnknown: return "Unknown";
-        case ESheen: return "Sheen";
-        case EClearCoat: return "ClearCoat";
-        case ETransmission: return "Transmission";
-        case EMayaBase: return "MayaBase";
-        case EMayaSpecular: return "MayaSpecular";
-        case EMayaSpecularColor: return "MayaSpecularColor";
-        case EMayaSpecularRoughness: return "MayaSpecularRoughness";
-        default: return "Unknown";
+        case ENone:
+            return "None";
+        case EDiffuse:
+            return "Diffuse";
+        case ESpecular:
+            return "Specular";
+        case EAmbient:
+            return "Ambient";
+        case EEmitter:
+            return "Emitter";
+        case EHeight:
+            return "Height";
+        case ENormal:
+            return "Normal";
+        case EShininess:
+            return "Shininess";
+        case EOpacity:
+            return "Opacity";
+        case EDisplacement:
+            return "Displacement";
+        case ELightMap:
+            return "LightMap";
+        case EReflection:
+            return "Reflection";
+        case EBaseColor:
+            return "BaseColor";
+        case ENormalCamera:
+            return "NormalCamera";
+        case EEmissionColor:
+            return "EmissionColor";
+        case EMetallic:
+            return "Metallic";
+        case EDiffuseRoughness:
+            return "DiffuseRoughness";
+        case EAmbientOcclusion:
+            return "AmbientOcclusion";
+        case EUnknown:
+            return "Unknown";
+        case ESheen:
+            return "Sheen";
+        case EClearCoat:
+            return "ClearCoat";
+        case ETransmission:
+            return "Transmission";
+        case EMayaBase:
+            return "MayaBase";
+        case EMayaSpecular:
+            return "MayaSpecular";
+        case EMayaSpecularColor:
+            return "MayaSpecularColor";
+        case EMayaSpecularRoughness:
+            return "MayaSpecularRoughness";
+        default:
+            return "Unknown";
     }
 }
 
 TextureDescriptor::TextureDescriptor()
-    : format(e_uint), color(e_linear), generate_mipmaps(true), wrap_s(GL_REPEAT), wrap_t(GL_REPEAT),
-      min_filter(GL_LINEAR_MIPMAP_LINEAR), mag_filter(GL_LINEAR) {}
+    : generate_mipmaps(true), wrap_s(GL_REPEAT), wrap_t(GL_REPEAT), min_filter(GL_LINEAR_MIPMAP_LINEAR),
+      mag_filter(GL_LINEAR) {}
 
 Texture::Texture(int height, int width, int channel) noexcept
     : Resource(std::filesystem::path()), m_id(0), m_type(ENone), m_channel(channel), m_width(width), m_height(height) {
@@ -111,16 +138,24 @@ void Texture::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) no
         return;
     }
 
+    auto texture_descriptor = std::dynamic_pointer_cast<TextureDescriptor>(resource_descriptor);
+
+    bool generate_mipmaps = texture_descriptor->generate_mipmaps;
+
     GLint format;
+    GLint internal_format;
     switch (m_channel) {
         case 1:
-            format = GL_RED;
+            format          = GL_RED;
+            internal_format = GL_R32F;
             break;
         case 3:
-            format = GL_RGB;
+            format          = GL_RGB;
+            internal_format = GL_RGB32F;
             break;
         case 4:
-            format = GL_RGBA;
+            format          = GL_RGBA;
+            internal_format = GL_RGBA32F;
             break;
         default:
             get_logger()->error("Unsupported m_channel count: " + std::to_string(m_channel));
@@ -129,39 +164,7 @@ void Texture::upload(std::shared_ptr<ResourceDescriptor> resource_descriptor) no
 
     glGenTextures(1, &m_id);
     glBindTexture(GL_TEXTURE_2D, m_id);
-
-    auto texture_descriptor = std::dynamic_pointer_cast<TextureDescriptor>(resource_descriptor);
-
-    bool is_srgb          = texture_descriptor->color == TextureDescriptor::e_srgb;
-    bool is_float         = texture_descriptor->format == TextureDescriptor::e_float;
-    bool generate_mipmaps = texture_descriptor->generate_mipmaps;
-
-    if (is_float) {
-        auto *temp_data = new float[m_width * m_height * m_channel];
-        if (is_srgb) {
-            // Bulk conversion (potential SIMD optimization here)
-            for (int i = 0; i < m_width * m_height * m_channel; ++i) {
-                temp_data[i] = linear_to_srgb(m_data[i]);
-            }
-        } else {
-            std::memcpy(temp_data, m_data.get(), m_width * m_height * m_channel * sizeof(float));
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_FLOAT, temp_data);
-        delete[] temp_data;
-    } else {
-        auto *byte_data = new uint8_t[m_width * m_height * m_channel];
-        if (is_srgb) {
-            for (int i = 0; i < m_width * m_height * m_channel; ++i) {
-                byte_data[i] = static_cast<uint8_t>(std::clamp(linear_to_srgb(m_data[i]) * 255.0f, 0.0f, 255.0f));
-            }
-        } else {
-            for (int i = 0; i < m_width * m_height * m_channel; ++i) {
-                byte_data[i] = static_cast<uint8_t>(std::clamp(m_data[i] * 255.0f, 0.0f, 255.0f));
-            }
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_BYTE, byte_data);
-        delete[] byte_data;
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, m_width, m_height, 0, format, GL_FLOAT, m_data.get());
 
     if (generate_mipmaps) {
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -195,4 +198,14 @@ float linear_to_srgb(float c) noexcept {
         return 12.92f * c;
 
     return 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+}
+
+std::shared_ptr<Texture> Texture::create_solid_color(float r, float g, float b, float alpha, TextureType type) {
+    auto tex    = std::make_shared<Texture>(1, 1, 4);
+    tex->m_type = type;
+    tex->m_data[0] = r;
+    tex->m_data[1] = g;
+    tex->m_data[2] = b;
+    tex->m_data[3] = alpha;
+    return tex;
 }

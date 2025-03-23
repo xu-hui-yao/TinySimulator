@@ -11,6 +11,7 @@ void RenderSystem::draw_scene(entt::registry &registry, const std::shared_ptr<Sc
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Get view/projection matrices
     const auto &view   = scene->get_main_camera()->get_view_matrix();
@@ -30,11 +31,10 @@ void RenderSystem::draw_scene(entt::registry &registry, const std::shared_ptr<Sc
             glBindVertexArray(0);
             for (const auto &texture : mesh->get_textures()) {
                 auto offset = static_cast<int>(texture->get_type());
-                glActiveTexture(GL_TEXTURE0 + offset);
                 shader->set_integer(
                     std::string("uMaterial").append(texture_type_to_string(texture->get_type())).c_str(), offset);
+                glActiveTexture(GL_TEXTURE0 + offset);
                 glBindTexture(GL_TEXTURE_2D, texture->get_id());
-                glActiveTexture(GL_TEXTURE0);
             }
         }
     });

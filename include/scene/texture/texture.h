@@ -156,10 +156,6 @@ enum TextureType {
 std::string texture_type_to_string(TextureType type);
 
 struct TextureDescriptor : ResourceDescriptor {
-    enum Format { e_float, e_uint };
-    enum Color { e_linear, e_srgb };
-    Format format;
-    Color color;
     bool generate_mipmaps;
     int wrap_s;
     int wrap_t;
@@ -171,6 +167,9 @@ struct TextureDescriptor : ResourceDescriptor {
 
 class Texture : public Resource {
 public:
+    static std::shared_ptr<Texture> create_solid_color(float r = 1.0f, float g = 1.0f, float b = 1.0f,
+                                                       float alpha = 1.0f, TextureType type = EDiffuse);
+
     Texture(int height, int width, int channel) noexcept;
 
     ~Texture() noexcept override;

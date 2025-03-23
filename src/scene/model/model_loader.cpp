@@ -1,5 +1,6 @@
 #include <scene/model/model_loader.h>
 #include <scene/texture/texture_manager.h>
+#include <scene/model/primitive_generator.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -7,6 +8,11 @@
 #include <core/fwd.h>
 
 std::shared_ptr<Resource> ModelLoader::load(const std::filesystem::path &path) {
+    if (path.string().find("internal://primitive/") == 0) {
+        auto type = path.string().substr(21);
+        return PrimitiveGenerator::generate(type, {});
+    }
+
     auto model = load_from_assimp(path);
     if (!model) {
         get_logger()->error("[ModelLoader] Failed to load model from '{}'" + absolute(path).string());
