@@ -1,8 +1,8 @@
+#include <core/fwd.h>
+#include <filesystem>
 #include <scene/shader/async_shader_loader.h>
 #include <scene/shader/shader_loader.h>
 #include <scene/shader/shader_manager.h>
-#include <core/fwd.h>
-#include <filesystem>
 
 ShaderManager::ShaderManager() : m_max_shader_count(M_MAX_SHADER_COUNT), m_stop_hot_reload(false) {
     get_async_shader_loader()->start(M_SHADER_LOAD_THREAD);
@@ -16,7 +16,8 @@ ShaderManager::~ShaderManager() {
     get_async_shader_loader()->stop();
 }
 
-std::shared_ptr<Resource> ShaderManager::load_resource(const std::filesystem::path &path) {
+std::shared_ptr<Resource> ShaderManager::load_resource(const std::filesystem::path &path,
+                                                       const std::unordered_map<std::string, std::any> &param) {
     std::lock_guard lock(m_mutex);
 
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
@@ -31,7 +32,7 @@ std::shared_ptr<Resource> ShaderManager::load_resource(const std::filesystem::pa
     }
 
     // use sync loader
-    auto resource = get_shader_loader()->load(canonical_path);
+    auto resource = get_shader_loader()->load(canonical_path, param);
     auto shader   = std::dynamic_pointer_cast<Shader>(resource);
     if (!shader) {
         get_logger()->error("[ShaderManager] Failed to load shader: " + canonical_path);
@@ -57,7 +58,8 @@ std::shared_ptr<Resource> ShaderManager::load_resource(const std::filesystem::pa
     return shader;
 }
 
-void ShaderManager::load_resource_async(const std::filesystem::path &path) {
+void ShaderManager::load_resource_async(const std::filesystem::path &path,
+                                        const std::unordered_map<std::string, std::any> &param) {
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
     if (!exist) {
         get_logger()->error("ShaderManger::load_resource - File " + resolved_path.string() + " not found.");
@@ -73,6 +75,7 @@ void ShaderManager::load_resource_async(const std::filesystem::path &path) {
     ResourceTask task;
     task.task_type = ResourceTaskType::Load;
     task.file_path = canonical_path;
+    task.param = param;
     task.on_loaded = [this, canonical_path](const std::shared_ptr<Resource> &res) {
         if (!res) {
             get_logger()->error("[ShaderManager] Async load returned null: " + canonical_path);

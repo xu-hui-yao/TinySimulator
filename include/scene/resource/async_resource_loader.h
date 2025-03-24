@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <scene/resource/resource.h>
+#include <any>
 
 /**
  * @brief Task type for asynchronous operations.
@@ -20,6 +21,7 @@ struct ResourceTask {
     std::function<void()> on_deleted = nullptr;
     // Old resource for reload tasks (optional).
     std::shared_ptr<Resource> old_resource = nullptr;
+    std::unordered_map<std::string, std::any> param = {};
 };
 
 /**

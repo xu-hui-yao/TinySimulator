@@ -27,8 +27,6 @@ void RenderSystem::draw_scene(entt::registry &registry, const std::shared_ptr<Sc
         auto meshes = renderable.model->get_meshes();
         for (const auto &mesh : meshes) {
             glBindVertexArray(mesh->get_vao());
-            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh->get_indices_size()), GL_UNSIGNED_INT, nullptr);
-            glBindVertexArray(0);
             for (const auto &texture : mesh->get_textures()) {
                 auto offset = static_cast<int>(texture->get_type());
                 shader->set_integer(
@@ -36,6 +34,8 @@ void RenderSystem::draw_scene(entt::registry &registry, const std::shared_ptr<Sc
                 glActiveTexture(GL_TEXTURE0 + offset);
                 glBindTexture(GL_TEXTURE_2D, texture->get_id());
             }
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh->get_indices_size()), GL_UNSIGNED_INT, nullptr);
+            glBindVertexArray(0);
         }
     });
 

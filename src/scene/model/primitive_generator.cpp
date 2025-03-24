@@ -19,9 +19,11 @@ std::shared_ptr<Model> PrimitiveGenerator::generate_cube(const std::unordered_ma
             const auto color_a   = material.contains("color_a") ? std::any_cast<float>(material.at("color_a")) : 1.0f;
             const auto type = material.contains("type") ? std::any_cast<TextureType>(material.at("type")) : EDiffuse;
             textures.push_back(Texture::create_solid_color(color_r, color_g, color_b, color_a, type));
+        } else {
+            textures.push_back(Texture::create_solid_color(1.0f, 1.0f, 1.0f, 1.0f, EDiffuse));
         }
     } catch (const std::bad_any_cast &e) {
-        get_logger()->error("Invalid material parameters: {}", e.what());
+        get_logger()->error(std::string("Invalid material parameters: ") + e.what());
     }
 
     const glm::vec3 positions[] = { { -width / 2, -height / 2, depth / 2 },  { width / 2, -height / 2, depth / 2 },
@@ -82,9 +84,11 @@ std::shared_ptr<Model> PrimitiveGenerator::generate_sphere(const std::unordered_
             const auto color_a   = material.contains("color_a") ? std::any_cast<float>(material.at("color_a")) : 1.0f;
             const auto type = material.contains("type") ? std::any_cast<TextureType>(material.at("type")) : EDiffuse;
             textures.push_back(Texture::create_solid_color(color_r, color_g, color_b, color_a, type));
+        } else {
+            textures.push_back(Texture::create_solid_color(1.0f, 1.0f, 1.0f, 1.0f, EDiffuse));
         }
     } catch (const std::bad_any_cast &e) {
-        get_logger()->error("Invalid material parameters: {}", e.what());
+        get_logger()->error(std::string("Invalid material parameters: ") + e.what());
     }
 
     const auto PI = static_cast<float>(std::acos(-1));
@@ -158,9 +162,11 @@ std::shared_ptr<Model> PrimitiveGenerator::generate_plane(const std::unordered_m
             const auto color_a   = material.contains("color_a") ? std::any_cast<float>(material.at("color_a")) : 1.0f;
             const auto type = material.contains("type") ? std::any_cast<TextureType>(material.at("type")) : EDiffuse;
             textures.push_back(Texture::create_solid_color(color_r, color_g, color_b, color_a, type));
+        } else {
+            textures.push_back(Texture::create_solid_color(1.0f, 1.0f, 1.0f, 1.0f, EDiffuse));
         }
     } catch (const std::bad_any_cast &e) {
-        get_logger()->error("Invalid material parameters: {}", e.what());
+        get_logger()->error(std::string("Invalid material parameters: ") + e.what());
     }
 
     const float x_step    = width / static_cast<float>(segments_x);
@@ -188,6 +194,8 @@ std::shared_ptr<Model> PrimitiveGenerator::generate_plane(const std::unordered_m
 
             indices.insert(indices.end(), { lt, rt, lb });
             indices.insert(indices.end(), { lb, rt, rb });
+            indices.insert(indices.end(), { lt, lb, rt });
+            indices.insert(indices.end(), { lb, rb, rt });
         }
     }
 

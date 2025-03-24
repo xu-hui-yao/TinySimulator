@@ -14,9 +14,11 @@ public:
 
     ~ShaderManager() override;
 
-    std::shared_ptr<Resource> load_resource(const std::filesystem::path &path) override;
+    std::shared_ptr<Resource> load_resource(const std::filesystem::path &path,
+                                            const std::unordered_map<std::string, std::any> &param) override;
 
-    void load_resource_async(const std::filesystem::path &path) override;
+    void load_resource_async(const std::filesystem::path &path,
+                             const std::unordered_map<std::string, std::any> &param) override;
 
     void remove_resource(const std::filesystem::path &path) override;
 

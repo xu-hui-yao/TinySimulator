@@ -5,7 +5,6 @@
 #include <ecs/system/render.h>
 #include <scene/model/model_manager.h>
 #include <scene/scene/scene.h>
-#include <memory>
 
 int main() {
     get_window_manager()->init("test", 1920, 1080);
@@ -31,6 +30,13 @@ int main() {
     scene->load_model("marry", "assets/Marry/Marry.obj");
     registry.emplace<Renderable>(model_entity, scene->get_model("marry"));
     scene->get_model("marry")->upload(nullptr);
+
+    const auto cloth_entity = registry.create();
+    registry.emplace<Transform>(cloth_entity, glm::vec3(0, 5, 0), glm::vec3(0), glm::vec3(1));
+    scene->load_model("cloth", ModelLoader::internal_prefix + "plane",
+                      { { "width", 10.0f }, { "height", 10.0f }, { "segments_x", 4 }, { "segments_z", 4 } });
+    registry.emplace<Renderable>(cloth_entity, scene->get_model("cloth"));
+    scene->get_model("cloth")->upload(nullptr);
 
     while (!get_quit()) {
         auto start_time = std::chrono::high_resolution_clock::now();

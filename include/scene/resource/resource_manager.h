@@ -1,6 +1,6 @@
 #pragma once
 
-#include <chrono>
+#include <any>
 #include <scene/resource/resource.h>
 
 /**
@@ -14,15 +14,19 @@ public:
     /**
      * @brief Synchronously load a resource from file and store it internally.
      * @param path The file path.
+     * @param param The descriptor of internal resource
      * @return The resource pointer if successful, or throws/returns nullptr on failure.
      */
-    virtual std::shared_ptr<Resource> load_resource(const std::filesystem::path &path) = 0;
+    virtual std::shared_ptr<Resource> load_resource(const std::filesystem::path &path,
+                                                    const std::unordered_map<std::string, std::any> &param) = 0;
 
     /**
      * @brief Asynchronously load a resource from file.
      * @param path The file path.
+     * @param param The descriptor of internal resource
      */
-    virtual void load_resource_async(const std::filesystem::path &path) = 0;
+    virtual void load_resource_async(const std::filesystem::path &path,
+                                     const std::unordered_map<std::string, std::any> &param) = 0;
 
     /**
      * @brief Synchronously remove a resource from internal storage.

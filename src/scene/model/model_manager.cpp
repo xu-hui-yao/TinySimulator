@@ -1,5 +1,5 @@
-#include <scene/model/model_manager.h>
 #include <core/fwd.h>
+#include <scene/model/model_manager.h>
 
 ModelManager::ModelManager() : m_max_model_count(M_MAX_MODEL_COUNT), m_stop_hot_reload(false) {
     m_async_loader.start(M_MODEL_LOAD_THREAD);
@@ -13,12 +13,23 @@ ModelManager::~ModelManager() {
     m_async_loader.stop();
 }
 
-std::shared_ptr<Resource> ModelManager::load_resource(const std::filesystem::path &path) {
+std::shared_ptr<Resource> ModelManager::load_resource(const std::filesystem::path &path,
+                                                      const std::unordered_map<std::string, std::any> &param) {
     std::lock_guard lock(m_mutex);
 
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
     if (!exist) {
-        get_logger()->error("ModelManger::load_resource - File " + resolved_path.string() + " not found.");
+        if (std::string(path).find(ModelLoader::internal_prefix) == 0) {
+            auto resource = m_sync_loader.load(path, param);
+            auto model    = std::dynamic_pointer_cast<Model>(resource);
+            ModelRecord rec;
+            rec.model         = model;
+            rec.last_access   = std::chrono::system_clock::now();
+            m_model_map[path] = rec;
+            return resource;
+        }
+        get_logger()->error("Failed to load model {}", std::string(path));
+        return nullptr;
     }
     auto canonical_path = canonical(resolved_path).string();
     auto it             = m_model_map.find(canonical_path);
@@ -27,7 +38,7 @@ std::shared_ptr<Resource> ModelManager::load_resource(const std::filesystem::pat
         return it->second.model;
     }
 
-    auto resource = m_sync_loader.load(canonical_path);
+    auto resource = m_sync_loader.load(canonical_path, param);
     auto model    = std::dynamic_pointer_cast<Model>(resource);
     if (!model) {
         get_logger()->error("[ModelManager] Failed to load model: " + canonical_path);
@@ -50,11 +61,23 @@ std::shared_ptr<Resource> ModelManager::load_resource(const std::filesystem::pat
     return model;
 }
 
-void ModelManager::load_resource_async(const std::filesystem::path &path) {
+void ModelManager::load_resource_async(const std::filesystem::path &path,
+                                       const std::unordered_map<std::string, std::any> &param) {
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
     if (!exist) {
-        get_logger()->error("ModelManger::load_resource - File " + resolved_path.string() + " not found.");
+        if (std::string(path).find(ModelLoader::internal_prefix) == 0) {
+            auto resource = m_sync_loader.load(path, param);
+            auto model    = std::dynamic_pointer_cast<Model>(resource);
+            ModelRecord rec;
+            rec.model         = model;
+            rec.last_access   = std::chrono::system_clock::now();
+            m_model_map[path] = rec;
+            return;
+        }
+        get_logger()->error("Failed to load model {}", std::string(path));
+        return;
     }
+
     auto canonical_path = canonical(resolved_path).string();
     {
         std::lock_guard lock(m_mutex);
@@ -66,6 +89,7 @@ void ModelManager::load_resource_async(const std::filesystem::path &path) {
     ResourceTask task;
     task.task_type = ResourceTaskType::Load;
     task.file_path = canonical_path;
+    task.param = param;
     task.on_loaded = [this, canonical_path](const std::shared_ptr<Resource> &res) {
         if (!res) {
             get_logger()->error("[ModelManager] Async load returned null: " + canonical_path);

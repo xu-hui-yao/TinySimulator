@@ -1,7 +1,8 @@
-#include <scene/shader/shader_loader.h>
 #include <core/fwd.h>
+#include <scene/shader/shader_loader.h>
 
-std::shared_ptr<Resource> ShaderLoader::load(const std::filesystem::path &path) {
+std::shared_ptr<Resource> ShaderLoader::load(const std::filesystem::path &path,
+                                             const std::unordered_map<std::string, std::any> &param) {
     return std::make_shared<Shader>(path);
 }
 

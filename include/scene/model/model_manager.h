@@ -1,8 +1,8 @@
 #pragma once
 
-#include <chrono>
 #include <scene/model/async_model_loader.h>
 #include <scene/model/model.h>
+#include <scene/model/model_loader.h>
 #include <scene/resource/resource_manager.h>
 #include <thread>
 #include <unordered_map>
@@ -13,9 +13,11 @@ public:
 
     ~ModelManager() override;
 
-    std::shared_ptr<Resource> load_resource(const std::filesystem::path &path) override;
+    std::shared_ptr<Resource> load_resource(const std::filesystem::path &path,
+                                            const std::unordered_map<std::string, std::any> &param) override;
 
-    void load_resource_async(const std::filesystem::path &path) override;
+    void load_resource_async(const std::filesystem::path &path,
+                             const std::unordered_map<std::string, std::any> &param) override;
 
     void remove_resource(const std::filesystem::path &path) override;
 

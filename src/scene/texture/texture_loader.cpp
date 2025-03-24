@@ -14,10 +14,11 @@
 #undef min
 #undef max
 #endif
-#include <tinyexr.h>
 #include <core/fwd.h>
+#include <tinyexr.h>
 
-std::shared_ptr<Resource> TextureLoader::load(const std::filesystem::path &path) {
+std::shared_ptr<Resource> TextureLoader::load(const std::filesystem::path &path,
+                                              const std::unordered_map<std::string, std::any> &param) {
     /**
      * Default store in linear, float format
      */

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <scene/resource/async_resource_loader.h>
-#include <scene/model/model_loader.h>
 #include <condition_variable>
 #include <queue>
+#include <scene/resource/async_resource_loader.h>
 #include <thread>
 #include <vector>
 

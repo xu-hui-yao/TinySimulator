@@ -1,16 +1,28 @@
-#include <scene/model/model_loader.h>
-#include <scene/texture/texture_manager.h>
-#include <scene/model/primitive_generator.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <spdlog/spdlog.h>
 #include <core/fwd.h>
+#include <scene/model/model_loader.h>
+#include <scene/model/primitive_generator.h>
+#include <scene/texture/texture_manager.h>
+#include <spdlog/spdlog.h>
 
-std::shared_ptr<Resource> ModelLoader::load(const std::filesystem::path &path) {
-    if (path.string().find("internal://primitive/") == 0) {
-        auto type = path.string().substr(21);
-        return PrimitiveGenerator::generate(type, {});
+std::shared_ptr<Resource> ModelLoader::load(const std::filesystem::path &path,
+                                            const std::unordered_map<std::string, std::any> &param) {
+    if (path.string().find(internal_prefix) == 0) {
+        auto posix = path.string().substr(internal_prefix_length);
+        std::string type;
+        if (posix.find("cube") == 0) {
+            type = "cube";
+        } else if (posix.find("sphere") == 0) {
+            type = "sphere";
+        } else if (posix.find("plane") == 0) {
+            type = "plane";
+        } else {
+            get_logger()->error("unknown posix", posix);
+            return nullptr;
+        }
+        return PrimitiveGenerator::generate(type, param);
     }
 
     auto model = load_from_assimp(path);
@@ -126,10 +138,10 @@ std::vector<std::shared_ptr<Texture>> ModelLoader::load_textures(const aiMateria
             std::string full_tex_path = absolute(path).string() + "/" + std::string(str.C_Str());
 
             if (!get_texture_manager()->exist_resource(std::filesystem::path(full_tex_path))) {
-                get_texture_manager()->load_resource(std::filesystem::path(full_tex_path));
+                get_texture_manager()->load_resource(std::filesystem::path(full_tex_path), {});
             }
-            auto texture_ptr =
-                std::dynamic_pointer_cast<Texture>(get_texture_manager()->get_resource(std::filesystem::path(full_tex_path)));
+            auto texture_ptr = std::dynamic_pointer_cast<Texture>(
+                get_texture_manager()->get_resource(std::filesystem::path(full_tex_path)));
             texture_ptr->set_type(static_cast<TextureType>(i));
 
             results.push_back(texture_ptr);

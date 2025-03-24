@@ -1,6 +1,6 @@
-#include <scene/texture/texture_manager.h>
 #include <core/fwd.h>
 #include <filesystem>
+#include <scene/texture/texture_manager.h>
 
 TextureManager::TextureManager() noexcept : m_max_texture_count(M_MAX_TEXTURE_COUNT), m_stop_hot_reload(false) {
     get_async_texture_loader()->start(M_TEXTURE_LOAD_THREAD);
@@ -14,7 +14,9 @@ TextureManager::~TextureManager() noexcept {
     get_async_texture_loader()->stop();
 }
 
-std::shared_ptr<Resource> TextureManager::load_resource(const std::filesystem::path &path) noexcept {
+std::shared_ptr<Resource>
+TextureManager::load_resource(const std::filesystem::path &path,
+                              const std::unordered_map<std::string, std::any> &param) noexcept {
     std::lock_guard lock(m_mutex);
 
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
@@ -30,7 +32,7 @@ std::shared_ptr<Resource> TextureManager::load_resource(const std::filesystem::p
     }
 
     // not loaded yet, do synchronous load
-    auto texture = std::dynamic_pointer_cast<Texture>(get_texture_loader()->load(canonical_path));
+    auto texture = std::dynamic_pointer_cast<Texture>(get_texture_loader()->load(canonical_path, param));
     if (!texture) {
         get_logger()->error("[TextureManager] Failed to load texture: " + canonical_path);
         return nullptr;
@@ -50,7 +52,8 @@ std::shared_ptr<Resource> TextureManager::load_resource(const std::filesystem::p
     return texture;
 }
 
-void TextureManager::load_resource_async(const std::filesystem::path &path) noexcept {
+void TextureManager::load_resource_async(const std::filesystem::path &path,
+                                         const std::unordered_map<std::string, std::any> &param) noexcept {
     auto [resolved_path, exist] = get_file_resolver().resolve(path);
     if (!exist) {
         get_logger()->error("TextureManger::load_resource - File " + resolved_path.string() + " not found.");
@@ -67,7 +70,7 @@ void TextureManager::load_resource_async(const std::filesystem::path &path) noex
     ResourceTask task;
     task.task_type = ResourceTaskType::Load;
     task.file_path = canonical_path;
-
+    task.param     = param;
     // callback
     task.on_loaded = [this, canonical_path](const std::shared_ptr<Resource> &resource) {
         if (!resource) {

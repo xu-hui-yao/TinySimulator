@@ -80,7 +80,7 @@ void AsyncShaderLoader::worker_thread() noexcept {
 std::shared_ptr<Resource> AsyncShaderLoader::load_resource_impl(const ResourceTask &task) noexcept {
     // reuse the synchronous loader
     auto shader_loader = get_shader_loader();
-    auto resource = shader_loader->load(task.file_path);
+    auto resource = shader_loader->load(task.file_path, task.param);
     if (!resource) {
         get_logger()->error("[AsyncShaderLoader] Failed to load: " + task.file_path.string());
     }

@@ -16,7 +16,8 @@ add_executable(tiny-renderer
         include/ecs/component/rigidbody.h
         include/ecs/component/renderable.h
         include/ecs/system/render.h
-        include/ecs/system/physics.h)
+        include/ecs/system/physics.h
+        include/ecs/component/collider.h)
 
 add_subdirectory(ext)
 add_subdirectory(src)

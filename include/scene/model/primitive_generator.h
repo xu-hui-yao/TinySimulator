@@ -1,10 +1,8 @@
-// primitive_generator.h
 #pragma once
 
 #include <any>
 #include <scene/model/model.h>
 #include <string>
-#include <unordered_map>
 
 /**
  * @brief Generates primitive 3D models programmatically
@@ -28,7 +26,9 @@ public:
 private:
     // Shape generation implementations
     static std::shared_ptr<Model> generate_cube(const std::unordered_map<std::string, std::any> &params);
+
     static std::shared_ptr<Model> generate_sphere(const std::unordered_map<std::string, std::any> &params);
+
     static std::shared_ptr<Model> generate_plane(const std::unordered_map<std::string, std::any> &params);
 
     /**

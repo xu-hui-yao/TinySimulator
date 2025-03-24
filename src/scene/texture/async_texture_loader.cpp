@@ -78,7 +78,7 @@ void AsyncTextureLoader::worker_thread() noexcept {
 
 std::shared_ptr<Resource> AsyncTextureLoader::load_resource_impl(const ResourceTask &task) noexcept {
     // We can rely on the sync loader:
-    auto resource = get_texture_loader()->load(task.file_path);
+    auto resource = get_texture_loader()->load(task.file_path, task.param);
     if (!resource) {
         get_logger()->error("[AsyncTextureLoader] Failed to load: " + task.file_path.string());
         return nullptr;

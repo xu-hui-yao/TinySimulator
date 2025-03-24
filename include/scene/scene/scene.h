@@ -5,6 +5,7 @@
 #include <scene/model/model.h>
 #include <scene/shader/shader.h>
 #include <unordered_map>
+#include <any>
 
 class Scene {
 public:
@@ -14,11 +15,13 @@ public:
 
     std::shared_ptr<Scene> get_parent();
 
-    void load_model(const std::string &name, const std::filesystem::path &path);
+    void load_model(const std::string &name, const std::filesystem::path &path,
+                    const std::unordered_map<std::string, std::any> &param = {});
 
     std::shared_ptr<Model> get_model(const std::string &name);
 
-    void load_shader(const std::string &name, const std::filesystem::path &path);
+    void load_shader(const std::string &name, const std::filesystem::path &path,
+                     const std::unordered_map<std::string, std::any> &param = {});
 
     std::shared_ptr<Shader> get_shader(const std::string &name);
 

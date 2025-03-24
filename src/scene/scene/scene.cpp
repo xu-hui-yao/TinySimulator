@@ -22,13 +22,14 @@ std::shared_ptr<Scene> Scene::get_child(const std::string &name) {
 
 std::shared_ptr<Scene> Scene::get_parent() { return m_parent; }
 
-void Scene::load_model(const std::string &name, const std::filesystem::path &path) {
+void Scene::load_model(const std::string &name, const std::filesystem::path &path,
+                       const std::unordered_map<std::string, std::any> &param) {
     if (m_models.contains(name)) {
         get_logger()->error("Scene::load_model: name already exists");
         return;
     }
 
-    auto model     = get_model_manager()->load_resource(path);
+    auto model     = get_model_manager()->load_resource(path, param);
     m_models[name] = std::dynamic_pointer_cast<Model>(model);
 }
 
@@ -41,13 +42,14 @@ std::shared_ptr<Model> Scene::get_model(const std::string &name) {
     return nullptr;
 }
 
-void Scene::load_shader(const std::string &name, const std::filesystem::path &path) {
+void Scene::load_shader(const std::string &name, const std::filesystem::path &path,
+                        const std::unordered_map<std::string, std::any> &param) {
     if (m_shaders.contains(name)) {
         get_logger()->error("Scene::load_shader: name already exists");
         return;
     }
 
-    auto shader     = get_shader_manager()->load_resource(path);
+    auto shader     = get_shader_manager()->load_resource(path, param);
     m_shaders[name] = std::dynamic_pointer_cast<Shader>(shader);
 }
 
