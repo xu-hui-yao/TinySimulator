@@ -16,8 +16,8 @@ public:
 
     bool save(std::shared_ptr<Resource> resource, const std::filesystem::path &path) override;
 
-    static constexpr std::string internal_prefix = "internal://primitive/";
-    static constexpr int internal_prefix_length  = internal_prefix.length();
+  static constexpr std::string_view internal_prefix = "internal://primitive/";
+  static constexpr int internal_prefix_length = internal_prefix.length();
 
 private:
     [[nodiscard]] static std::shared_ptr<Model> load_from_assimp(const std::filesystem::path &path);

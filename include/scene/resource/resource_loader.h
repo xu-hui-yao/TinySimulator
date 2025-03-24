@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <unordered_map>
 #include <filesystem>
 #include <scene/resource/resource.h>
 

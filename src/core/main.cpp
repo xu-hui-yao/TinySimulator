@@ -25,16 +25,37 @@ int main() {
     scene->set_main_camera("main");
 
     const auto model_entity = registry.create();
-    registry.emplace<Transform>(model_entity, glm::vec3(0, 5, 0), glm::vec3(0), glm::vec3(1));
-    registry.emplace<RigidBody>(model_entity, glm::vec3(0), 1.0f, true);
+    registry.emplace<Transform>(model_entity, glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1));
+    RigidBody model_rb;
+    model_rb.mass = 0.0f;
+    registry.emplace<RigidBody>(model_entity, model_rb);
+    Collider model_collider;
+    model_collider.shape = Collider::CAPSULE;
+    model_collider.capsule_radius = 0.6f;
+    model_collider.capsule_height = 2.7f;
+    registry.emplace<Collider>(model_entity, model_collider);
     scene->load_model("marry", "assets/Marry/Marry.obj");
     registry.emplace<Renderable>(model_entity, scene->get_model("marry"));
     scene->get_model("marry")->upload(nullptr);
 
+    const auto ground_entity = registry.create();
+    registry.emplace<Transform>(ground_entity, glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1));
+    scene->load_model("ground", std::string(ModelLoader::internal_prefix) + "plane1",
+                      { { "width", 10.0f }, { "height", 10.0f }, { "segments_x", 1 }, { "segments_z", 1 } });
+    registry.emplace<Renderable>(ground_entity, scene->get_model("ground"));
+    scene->get_model("ground")->upload(nullptr);
+
     const auto cloth_entity = registry.create();
-    registry.emplace<Transform>(cloth_entity, glm::vec3(0, 5, 0), glm::vec3(0), glm::vec3(1));
-    scene->load_model("cloth", ModelLoader::internal_prefix + "plane",
+    registry.emplace<Transform>(cloth_entity, glm::vec3(0, 50.0, 0), glm::vec3(0), glm::vec3(1));
+    scene->load_model("cloth", std::string(ModelLoader::internal_prefix) + "plane2",
                       { { "width", 10.0f }, { "height", 10.0f }, { "segments_x", 4 }, { "segments_z", 4 } });
+    RigidBody cloth_rb;
+    cloth_rb.mass = 1.0f;
+    registry.emplace<RigidBody>(cloth_entity, cloth_rb);
+    Collider cloth_collider;
+    cloth_collider.shape = Collider::BOX;
+    cloth_collider.half_extents = glm::vec3(5.0f, 0.1f, 5.0f);
+    registry.emplace<Collider>(cloth_entity, cloth_collider);
     registry.emplace<Renderable>(cloth_entity, scene->get_model("cloth"));
     scene->get_model("cloth")->upload(nullptr);
 

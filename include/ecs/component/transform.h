@@ -1,19 +1,24 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtx/euler_angles.hpp>
 
 struct Transform {
+    // Spatial transformation parameters
     glm::vec3 position{ 0.0f };
-    glm::vec3 rotation{ 0.0f };  // Euler angle
+    glm::vec3 rotation{ 0.0f }; // Euler angles (in radians)
     glm::vec3 scale{ 1.0f };
 
-    [[nodiscard]] glm::mat3 orientation_matrix() const {
-        return glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
-    }
+    explicit Transform(const glm::vec3 &pos = glm::vec3(0.0f), const glm::vec3 &rot = glm::vec3(0.0f),
+                       const glm::vec3 &scl = glm::vec3(1.0f));
 
-    [[nodiscard]] glm::mat4 matrix() const {
-        return glm::translate(glm::mat4(1.0f), position) * glm::orientate4(rotation) *
-               glm::scale(glm::mat4(1.0f), scale);
-    }
+    // Get the orientation quaternion (automatically cached)
+    [[nodiscard]] glm::quat orientation() const;
+
+    // Generate the model matrix
+    [[nodiscard]] glm::mat4 matrix() const;
+
+    Transform &operator=(const Transform &other);
+
+    // Move assignment operator
+    Transform &operator=(Transform &&other) noexcept;
 };

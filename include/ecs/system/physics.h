@@ -1,29 +1,29 @@
 #pragma once
 
+#include <ecs/component/collider.h>
+#include <ecs/component/transform.h>
 #include <entt/entt.hpp>
 
 class PhysicsSystem {
 public:
-    static void update(entt::registry &registry, float delta_time);
+    static void update(entt::registry &registry, float dt);
 
 private:
-    struct CollisionInfo {
-        glm::vec3 normal;
-        float depth;
+    struct CollisionPair {
+        entt::entity a;
+        entt::entity b;
+        Collider::CollisionManifold manifold;
     };
+    static std::vector<CollisionPair> collision_pairs;
 
-    static bool check_collision(const Transform &a_t, const Collider &a_col, const Transform &b_t,
-                                const Collider &b_col, CollisionInfo &out);
+    // Physics simulation steps
+    static void integrate_forces(entt::registry &registry, float dt);
 
-    static bool sphere_sphere(const glm::vec3 &a_pos, float a_rad, const glm::vec3 &b_pos, float b_rad,
-                              CollisionInfo &out);
+    static void detect_collisions(entt::registry &registry);
 
-    static bool sphere_obb(const glm::vec3 &sphere_pos, float sphere_rad, const Transform &box_t,
-                           const glm::vec3 &box_extents, CollisionInfo &out);
+    static void resolve_collisions(entt::registry &registry, float dt);
 
-    static bool obb_obb(const Transform &a_t, const glm::vec3 &a_ext, const Transform &b_t, const glm::vec3 &b_ext,
-                        CollisionInfo &out);
-
-    static float project_obb(const glm::vec3 &axis, const glm::vec3 &center, const glm::vec3 *obb_axes,
-                             const glm::vec3 &extents);
+    // Physics parameters
+    static constexpr glm::vec3 gravity{ 0.0f, -9.81f, 0.0f };
+    static constexpr float epsilon = 0.01f; // Minimum separation distance
 };

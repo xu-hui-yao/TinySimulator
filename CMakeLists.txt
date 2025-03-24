@@ -35,6 +35,7 @@ target_compile_definitions(tiny-renderer PRIVATE
         $<$<CONFIG:Debug>:M_DEBUG>
         M_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
         GL_SILENCE_DEPRECATION
+        GLM_ENABLE_EXPERIMENTAL
 )
 
 if (MSVC)

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <scene/resource/resource_loader.h>
 #include <scene/texture/texture.h>
+#include <unordered_map>
 
 class TextureLoader : public ResourceLoader {
 public:
