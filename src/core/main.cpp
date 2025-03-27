@@ -38,9 +38,15 @@ void create_assets(const std::shared_ptr<Scene> &scene, entt::registry &registry
     const auto ground_entity = registry.create();
     registry.emplace<Transform>(ground_entity, glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1));
     scene->load_model("ground", std::string(ModelLoader::internal_prefix) + "plane1",
-                      { { "width", 10.0f }, { "height", 10.0f }, { "segments_x", 1 }, { "segments_z", 1 } });
+                      { { "width", 8.0f }, { "height", 8.0f }, { "segments_x", 1 }, { "segments_z", 1 } });
     registry.emplace<Renderable>(ground_entity, scene->get_model("ground"));
     scene->get_model("ground")->upload(nullptr);
+    Collider ground_collider;
+    ground_collider.shape          = Collider::BOX;
+    ground_collider.half_extents   = glm::vec3(4.0f, 0.1f, 4.0f);
+    ground_collider.visualize      = true;
+    ground_collider.generate_visualize_model();
+    registry.emplace<Collider>(ground_entity, ground_collider);
 
     int cloth_resolution    = 32;
     const auto cloth_entity = registry.create();

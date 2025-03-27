@@ -54,6 +54,7 @@ struct Cloth {
     std::vector<bool> fixed_vertices;
     float distance_stiffness = 0.9f;
     float bend_stiffness     = 0.3f;
+    float friction_factor    = 0.1f;
     float damping            = 0.01f;
     glm::vec3 field_force    = glm::vec3(0.0f, 0.0f, -1e-2f);
     glm::vec3 gravity        = glm::vec3(0.0f, -9.81f, 0.0f);

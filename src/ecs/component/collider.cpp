@@ -12,9 +12,9 @@ void Collider::generate_visualize_model() {
             visualize_model->upload(nullptr);
             break;
         case BOX:
-            params          = { { "width", half_extents.x },
-                                { "height", half_extents.y },
-                                { "depth", half_extents.z },
+            params          = { { "width", half_extents.x * 2.0f },
+                                { "height", half_extents.y * 2.0f },
+                                { "depth", half_extents.z * 2.0f },
                                 { "material", color } };
             visualize_model = PrimitiveGenerator::generate("cube", params);
             visualize_model->upload(nullptr);
