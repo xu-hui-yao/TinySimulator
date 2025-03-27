@@ -31,9 +31,11 @@ public:
 
     Mesh &operator=(const Mesh &other) = delete;
 
-    void upload_to_gpu() noexcept;
+    void upload_to_gpu(bool vertices_changed, bool indices_changed) noexcept;
 
     void unload_from_gpu() noexcept;
+
+    void update_gpu_buffer() const noexcept;
 
     [[nodiscard]] const std::vector<std::shared_ptr<Texture>> &get_textures() const noexcept;
 
@@ -45,6 +47,12 @@ public:
 
     [[nodiscard]] size_t get_indices_size() const noexcept;
 
+    [[nodiscard]] std::vector<Vertex> &get_vertices() noexcept;
+
+    [[nodiscard]] const std::vector<Vertex> &get_vertices() const noexcept;
+
+    [[nodiscard]] const std::vector<GLuint> &get_indices() const noexcept;
+
 private:
     std::vector<Vertex> m_vertices;
     std::vector<GLuint> m_indices;
@@ -55,7 +63,7 @@ private:
 
 class Model : public Resource {
 public:
-    explicit Model(std::filesystem::path path, std::vector<std::shared_ptr<Mesh>>  meshes) noexcept;
+    explicit Model(std::filesystem::path path, std::vector<std::shared_ptr<Mesh>> meshes) noexcept;
 
     ~Model() noexcept override;
 
@@ -67,8 +75,16 @@ public:
 
     void unload() noexcept override;
 
+    void update_gpu_buffer() const;
+
     [[nodiscard]] const std::vector<std::shared_ptr<Mesh>> &get_meshes() const noexcept;
+
+    bool& get_vertices_changed() noexcept;
+
+    bool& get_indices_changed() noexcept;
 
 private:
     std::vector<std::shared_ptr<Mesh>> m_meshes;
+    bool vertices_changed;
+    bool indices_changed;
 };

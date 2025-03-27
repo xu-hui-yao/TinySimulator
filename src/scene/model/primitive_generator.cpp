@@ -192,10 +192,13 @@ std::shared_ptr<Model> PrimitiveGenerator::generate_plane(const std::unordered_m
             uint32_t lb = lt + (segments_x + 1);
             uint32_t rb = lb + 1;
 
-            indices.insert(indices.end(), { lt, rt, lb });
-            indices.insert(indices.end(), { lb, rt, rb });
-            indices.insert(indices.end(), { lt, lb, rt });
-            indices.insert(indices.end(), { lb, rb, rt });
+            if ((x + z) % 2 == 0) {
+                indices.insert(indices.end(), { lt, rt, lb });
+                indices.insert(indices.end(), { lb, rt, rb });
+            } else {
+                indices.insert(indices.end(), { lt, rt, rb });
+                indices.insert(indices.end(), { lt, rb, lb });
+            }
         }
     }
 
@@ -247,11 +250,148 @@ void PrimitiveGenerator::calculate_tangents(std::vector<Vertex> &vertices, const
     }
 }
 
+std::shared_ptr<Model> PrimitiveGenerator::generate_capsule(const std::unordered_map<std::string, std::any> &params) {
+    // Param
+    const float total_height = params.contains("height") ? std::any_cast<float>(params.at("height")) : 1.0f;
+    const float radius       = params.contains("radius") ? std::any_cast<float>(params.at("radius")) : 0.5f;
+    const int segments_radial =
+        params.contains("segments_radial") ? std::any_cast<int>(params.at("segments_radial")) : 24;
+    const int segments_height =
+        params.contains("segments_height") ? std::any_cast<int>(params.at("segments_height")) : 12;
+    std::vector<Vertex> vertices;
+    std::vector<GLuint> indices;
+    std::vector<std::shared_ptr<Texture>> textures;
+
+    // Texture
+    try {
+        if (params.contains("material")) {
+            const auto &material = std::any_cast<std::unordered_map<std::string, std::any>>(params.at("material"));
+            const auto color_r   = material.contains("color_r") ? std::any_cast<float>(material.at("color_r")) : 1.0f;
+            const auto color_g   = material.contains("color_g") ? std::any_cast<float>(material.at("color_g")) : 1.0f;
+            const auto color_b   = material.contains("color_b") ? std::any_cast<float>(material.at("color_b")) : 1.0f;
+            const auto color_a   = material.contains("color_a") ? std::any_cast<float>(material.at("color_a")) : 1.0f;
+            const auto type = material.contains("type") ? std::any_cast<TextureType>(material.at("type")) : EDiffuse;
+            textures.push_back(Texture::create_solid_color(color_r, color_g, color_b, color_a, type));
+        } else {
+            textures.push_back(Texture::create_solid_color(1.0f, 1.0f, 1.0f, 1.0f, EDiffuse));
+        }
+    } catch (const std::bad_any_cast &e) {
+        get_logger()->error(std::string("Invalid material parameters: ") + e.what());
+    }
+
+    // Var
+    const float cylinder_height      = std::max(total_height - 2.0f * radius, 0.0f);
+    const float half_cylinder_height = cylinder_height * 0.5f;
+    constexpr float pi               = 3.14159265f;
+    const float sector_step          = 2 * pi / static_cast<float>(segments_radial);
+    const float stack_step           = cylinder_height / static_cast<float>(segments_height);
+
+    // Cylinder
+    if (cylinder_height > 0) {
+        for (int i = 0; i <= segments_height; ++i) {
+            float y = -half_cylinder_height + static_cast<float>(i) * stack_step;
+            float v = static_cast<float>(i) / static_cast<float>(segments_height);
+            for (int j = 0; j <= segments_radial; ++j) {
+                float sector_angle = static_cast<float>(j) * sector_step;
+                float cos_angle    = cosf(sector_angle);
+                float sin_angle    = sinf(sector_angle);
+                Vertex vert;
+                vert.position       = glm::vec3(radius * cos_angle, y, radius * sin_angle);
+                vert.normal         = glm::vec3(cos_angle, 0.0f, sin_angle);
+                vert.texture_coords = glm::vec2(static_cast<float>(j) / static_cast<float>(segments_radial), v);
+                vertices.push_back(vert);
+            }
+        }
+    }
+
+    // Hemisphere
+    auto generate_hemisphere = [&](float cylinder_end_y, bool is_top) {
+        const int hemisphere_segments = segments_radial / 2;
+        const float direction         = is_top ? 1.0f : -1.0f;
+
+        for (int i = 0; i <= hemisphere_segments; ++i) {
+            float phi     = pi * 0.5f * static_cast<float>(i) / static_cast<float>(hemisphere_segments);
+            float cos_phi = cosf(phi);
+            float sin_phi = sinf(phi);
+
+            for (int j = 0; j <= segments_radial; ++j) {
+                float theta     = static_cast<float>(j) * sector_step;
+                float cos_theta = cosf(theta);
+                float sin_theta = sinf(theta);
+                Vertex vert;
+                vert.position = glm::vec3(radius * cos_theta * sin_phi, cylinder_end_y + direction * radius * cos_phi,
+                                          radius * sin_theta * sin_phi);
+
+                vert.normal = glm::vec3(cos_theta * sin_phi, direction * cos_phi, sin_theta * sin_phi);
+
+                vert.texture_coords =
+                    glm::vec2(static_cast<float>(j) / static_cast<float>(segments_radial),
+                              is_top ? (0.5f - 0.5f * static_cast<float>(i) / static_cast<float>(hemisphere_segments))
+                                     : (0.5f + 0.5f * static_cast<float>(i) / static_cast<float>(hemisphere_segments)));
+                vertices.push_back(vert);
+            }
+        }
+    };
+    generate_hemisphere(half_cylinder_height, true);
+    generate_hemisphere(-half_cylinder_height, false);
+
+    // Indices
+    for (int i = 0; i < segments_height; ++i) {
+        for (int j = 0; j < segments_radial; ++j) {
+            GLuint k1 = i * (segments_radial + 1) + j;
+            GLuint k2 = k1 + segments_radial + 1;
+            indices.push_back(k1);
+            indices.push_back(k2);
+            indices.push_back(k1 + 1);
+            indices.push_back(k1 + 1);
+            indices.push_back(k2);
+            indices.push_back(k2 + 1);
+        }
+    }
+    auto generate_hemisphere_indices = [&](GLuint base_index, bool is_top) {
+        const int hemisphere_segments = segments_radial / 2;
+        for (int i = 0; i < hemisphere_segments; ++i) {
+            for (int j = 0; j < segments_radial; ++j) {
+                GLuint k1 = base_index + i * (segments_radial + 1) + j;
+                GLuint k2 = k1 + segments_radial + 1;
+
+                if (is_top) {
+                    indices.push_back(k1);
+                    indices.push_back(k1 + 1);
+                    indices.push_back(k2);
+
+                    indices.push_back(k1 + 1);
+                    indices.push_back(k2 + 1);
+                    indices.push_back(k2);
+                } else {
+                    indices.push_back(k1);
+                    indices.push_back(k2);
+                    indices.push_back(k1 + 1);
+
+                    indices.push_back(k1 + 1);
+                    indices.push_back(k2);
+                    indices.push_back(k2 + 1);
+                }
+            }
+        }
+    };
+    generate_hemisphere_indices((segments_height + 1) * (segments_radial + 1), true);
+    generate_hemisphere_indices(
+        (segments_height + 1) * (segments_radial + 1) + (segments_radial / 2 + 1) * (segments_radial + 1), false);
+
+    calculate_tangents(vertices, indices);
+    auto mesh = std::make_shared<Mesh>(vertices, indices, textures);
+    return std::make_shared<Model>("internal://primitive/capsule", std::vector{ mesh });
+}
+
 std::shared_ptr<Model> PrimitiveGenerator::generate(const std::string &type,
                                                     const std::unordered_map<std::string, std::any> &params) {
     static const std::unordered_map<
         std::string, std::function<std::shared_ptr<Model>(const std::unordered_map<std::string, std::any> &)>>
-        generators = { { "cube", generate_cube }, { "sphere", generate_sphere }, { "plane", generate_plane } };
+        generators = { { "cube", generate_cube },
+                       { "sphere", generate_sphere },
+                       { "plane", generate_plane },
+                       { "capsule", generate_capsule } };
     if (auto it = generators.find(type); it != generators.end()) {
         return it->second(params);
     }

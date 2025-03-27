@@ -31,6 +31,8 @@ private:
 
     static std::shared_ptr<Model> generate_plane(const std::unordered_map<std::string, std::any> &params);
 
+    static std::shared_ptr<Model> generate_capsule(const std::unordered_map<std::string, std::any> &params);
+
     /**
      * @brief Calculates tangent vectors for normal mapping
      *

@@ -1,3 +1,5 @@
+add_subdirectory(physics_subsystem)
+
 target_sources(tiny-renderer PRIVATE
         render.cpp
         physics.cpp

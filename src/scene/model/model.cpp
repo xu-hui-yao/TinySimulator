@@ -36,7 +36,7 @@ Mesh &Mesh::operator=(Mesh &&other) noexcept {
     return *this;
 }
 
-void Mesh::upload_to_gpu() noexcept {
+void Mesh::upload_to_gpu(bool vertices_changed, bool indices_changed) noexcept {
     if (m_vao != 0 && m_vbo != 0 && m_ebo != 0) {
         return;
     }
@@ -55,12 +55,12 @@ void Mesh::upload_to_gpu() noexcept {
     // VBO
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)), m_vertices.data(),
-                 GL_STATIC_DRAW);
+                 vertices_changed ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
     // EBO
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_indices.size() * sizeof(GLuint)), m_indices.data(),
-                 GL_STATIC_DRAW);
+                 indices_changed ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
     // Position => layout = 0
     glEnableVertexAttribArray(0);
@@ -121,6 +121,15 @@ void Mesh::unload_from_gpu() noexcept {
     }
 }
 
+void Mesh::update_gpu_buffer() const noexcept {
+    if (m_vbo == 0) {
+        return;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)), m_vertices.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 const std::vector<std::shared_ptr<Texture>> &Mesh::get_textures() const noexcept { return m_textures; }
 
 GLuint Mesh::get_vao() const noexcept { return m_vao; }
@@ -131,11 +140,17 @@ GLuint Mesh::get_ebo() const noexcept { return m_ebo; }
 
 size_t Mesh::get_indices_size() const noexcept { return m_indices.size(); }
 
+std::vector<Vertex> &Mesh::get_vertices() noexcept { return m_vertices; }
+
+const std::vector<Vertex> &Mesh::get_vertices() const noexcept { return m_vertices; }
+
+const std::vector<GLuint> &Mesh::get_indices() const noexcept { return m_indices; }
+
 //
 // ================ Model ================
 //
 Model::Model(std::filesystem::path path, std::vector<std::shared_ptr<Mesh>> meshes) noexcept
-    : Resource(std::move(path)), m_meshes(std::move(meshes)) {}
+    : Resource(std::move(path)), m_meshes(std::move(meshes)), vertices_changed(false), indices_changed(false) {}
 
 Model::~Model() noexcept {
     for (auto &mesh : m_meshes) {
@@ -143,7 +158,9 @@ Model::~Model() noexcept {
     }
 }
 
-Model::Model(Model &&other) noexcept : Resource(other.m_path), m_meshes(std::move(other.m_meshes)) {}
+Model::Model(Model &&other) noexcept
+    : Resource(other.m_path), m_meshes(std::move(other.m_meshes)), vertices_changed(other.vertices_changed),
+      indices_changed(other.indices_changed) {}
 
 Model &Model::operator=(Model &&other) noexcept {
     if (this != &other) {
@@ -156,7 +173,7 @@ Model &Model::operator=(Model &&other) noexcept {
 
 void Model::upload(std::shared_ptr<ResourceDescriptor> /**/) noexcept {
     for (auto &mesh : m_meshes) {
-        mesh->upload_to_gpu();
+        mesh->upload_to_gpu(vertices_changed, indices_changed);
     }
 }
 
@@ -166,4 +183,14 @@ void Model::unload() noexcept {
     }
 }
 
+void Model::update_gpu_buffer() const {
+    for (auto &mesh : m_meshes) {
+        mesh->update_gpu_buffer();
+    }
+}
+
 const std::vector<std::shared_ptr<Mesh>> &Model::get_meshes() const noexcept { return m_meshes; }
+
+bool &Model::get_vertices_changed() noexcept { return vertices_changed; }
+
+bool &Model::get_indices_changed() noexcept { return indices_changed; }

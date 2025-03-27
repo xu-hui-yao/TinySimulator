@@ -1,23 +1,17 @@
 #include <core/fwd.h>
+#include <ecs/component/cloth.h>
+#include <ecs/component/collider.h>
 #include <ecs/component/rigidbody.h>
 #include <ecs/system/input.h>
 #include <ecs/system/physics.h>
+#include <ecs/system/physics_subsystem/collision_system.h>
+#include <ecs/system/physics_subsystem/pbd_cloth_system.h>
+#include <ecs/system/physics_subsystem/rigidbody_system.h>
 #include <ecs/system/render.h>
 #include <scene/model/model_manager.h>
 #include <scene/scene/scene.h>
 
-int main() {
-    get_window_manager()->init("test", 1920, 1080);
-
-    InputSystem::init();
-
-    auto scene = get_root_scene();
-
-    entt::registry registry;
-
-    scene->load_shader("blinn_phong", "shaders/blinn_phong/blinn_phong.vert");
-    scene->set_current_shader("blinn_phong");
-
+void create_assets(const std::shared_ptr<Scene> &scene, entt::registry &registry) {
     const auto camera_entity = registry.create();
     auto &camera = registry.emplace<Camera>(camera_entity, glm::vec3(0, 5, 10), glm::vec3(0), glm::vec3(0, 1, 0), 60.0f,
                                             16.0f / 9.0f, 0.1f, 100.0f);
@@ -30,12 +24,15 @@ int main() {
     model_rb.mass = 0.0f;
     registry.emplace<RigidBody>(model_entity, model_rb);
     Collider model_collider;
-    model_collider.shape = Collider::CAPSULE;
+    model_collider.shape          = Collider::CAPSULE;
     model_collider.capsule_radius = 0.6f;
-    model_collider.capsule_height = 2.7f;
+    model_collider.capsule_height = 3.4f;
+    model_collider.offset         = glm::vec3(0.0f, 1.7f, 0.0f);
+    model_collider.visualize      = true;
+    model_collider.generate_visualize_model();
     registry.emplace<Collider>(model_entity, model_collider);
     scene->load_model("marry", "assets/Marry/Marry.obj");
-    registry.emplace<Renderable>(model_entity, scene->get_model("marry"));
+    registry.emplace<Renderable>(model_entity, scene->get_model("marry"), Renderable::fill);
     scene->get_model("marry")->upload(nullptr);
 
     const auto ground_entity = registry.create();
@@ -45,19 +42,43 @@ int main() {
     registry.emplace<Renderable>(ground_entity, scene->get_model("ground"));
     scene->get_model("ground")->upload(nullptr);
 
+    int cloth_resolution    = 32;
     const auto cloth_entity = registry.create();
-    registry.emplace<Transform>(cloth_entity, glm::vec3(0, 50.0, 0), glm::vec3(0), glm::vec3(1));
+    Transform cloth_transform(glm::vec3(0, 10.0, 0), glm::vec3(0, 0, 0), glm::vec3(1));
+    registry.emplace<Transform>(cloth_entity, cloth_transform);
     scene->load_model("cloth", std::string(ModelLoader::internal_prefix) + "plane2",
-                      { { "width", 10.0f }, { "height", 10.0f }, { "segments_x", 4 }, { "segments_z", 4 } });
-    RigidBody cloth_rb;
-    cloth_rb.mass = 1.0f;
-    registry.emplace<RigidBody>(cloth_entity, cloth_rb);
-    Collider cloth_collider;
-    cloth_collider.shape = Collider::BOX;
-    cloth_collider.half_extents = glm::vec3(5.0f, 0.1f, 5.0f);
-    registry.emplace<Collider>(cloth_entity, cloth_collider);
-    registry.emplace<Renderable>(cloth_entity, scene->get_model("cloth"));
-    scene->get_model("cloth")->upload(nullptr);
+                      { { "width", 10.0f },
+                        { "height", 10.0f },
+                        { "segments_x", cloth_resolution },
+                        { "segments_z", cloth_resolution } });
+    auto cloth_model = scene->get_model("cloth");
+    Cloth cloth_cloth(cloth_model, cloth_transform, 0.1f);
+    cloth_cloth.fixed_vertices[0]                = true;
+    cloth_cloth.fixed_vertices[cloth_resolution] = true;
+    cloth_cloth.visualize                        = true;
+    registry.emplace<Cloth>(cloth_entity, cloth_cloth);
+    Renderable cloth_renderable(cloth_model, Renderable::polygon);
+    registry.emplace<Renderable>(cloth_entity, cloth_renderable);
+    cloth_model->upload(nullptr);
+}
+
+void init_physics() {
+    PhysicsSystem::register_subsystem<RigidBodySystem>();
+    PhysicsSystem::register_subsystem<CollisionSystem>();
+    PhysicsSystem::register_subsystem<PBDClothSystem>();
+}
+
+int main() {
+    get_window_manager()->init("test", 2560, 1440);
+    init_physics();
+    InputSystem::init();
+
+    auto scene = get_root_scene();
+    scene->load_shader("constant", "shaders/constant/constant.vert");
+    scene->set_current_shader("constant");
+
+    entt::registry registry;
+    create_assets(scene, registry);
 
     while (!get_quit()) {
         auto start_time = std::chrono::high_resolution_clock::now();

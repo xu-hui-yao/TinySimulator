@@ -1,7 +1,6 @@
 #include <bitset>
 #include <core/event/event_manager.h>
 #include <ecs/system/input.h>
-#include <iostream>
 #include <scene/scene/scene.h>
 
 void InputSystem::init() {
