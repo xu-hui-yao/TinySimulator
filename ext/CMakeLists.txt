@@ -37,7 +37,7 @@ set(ASSIMP_NO_EXPORT ON CACHE INTERNAL "Disable export formats" FORCE)
 add_subdirectory(assimp)
 
 # include
-target_include_directories(tiny-renderer PRIVATE
+target_include_directories(tiny-simulator PRIVATE
         glfw/include
         tinyexr
         tinygltf
@@ -50,7 +50,7 @@ target_include_directories(tiny-renderer PRIVATE
         entt/src
 )
 
-target_link_libraries(tiny-renderer PRIVATE
+target_link_libraries(tiny-simulator PRIVATE
         glad
         glfw
         assimp

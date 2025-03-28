@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(tiny-renderer LANGUAGES CXX C)
+project(tiny-simulator LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(tiny-renderer
+add_executable(tiny-simulator
         src/ecs/component/transform.cpp
         src/ecs/system/render.cpp
         src/ecs/system/physics.cpp
@@ -22,16 +22,16 @@ add_executable(tiny-renderer
 add_subdirectory(ext)
 add_subdirectory(src)
 
-target_include_directories(tiny-renderer PRIVATE
+target_include_directories(tiny-simulator PRIVATE
         "${CMAKE_SOURCE_DIR}/include"
 )
 
-target_link_libraries(tiny-renderer PRIVATE
+target_link_libraries(tiny-simulator PRIVATE
         Threads::Threads
         OpenGL::GL
 )
 
-target_compile_definitions(tiny-renderer PRIVATE
+target_compile_definitions(tiny-simulator PRIVATE
         $<$<CONFIG:Debug>:M_DEBUG>
         M_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
         GL_SILENCE_DEPRECATION
@@ -40,5 +40,5 @@ target_compile_definitions(tiny-renderer PRIVATE
 
 if (MSVC)
     add_compile_options("/utf-8")
-    target_compile_options(tiny-renderer PRIVATE "/utf-8")
+    target_compile_options(tiny-simulator PRIVATE "/utf-8")
 endif()

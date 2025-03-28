@@ -4,17 +4,9 @@
 
 class Camera {
 public:
-    explicit Camera(
-        const glm::vec3& position = glm::vec3(0.0f),
-        const glm::vec3& lookat = glm::vec3(0.0f, 0.0f, -1.0f),
-        const glm::vec3& up = glm::vec3(0.0f, 1.0f, 0.0f),
-        float fov = 45.0f,
-        float aspect = 16.0f/9.0f,
-        float near = 0.1f,
-        float far = 100.0f,
-        float speed = 5.0f,
-        float sensitivity = 0.08f
-    );
+    explicit Camera(const glm::vec3 &position = glm::vec3(0.0f), const glm::vec3 &lookat = glm::vec3(0.0f, 0.0f, -1.0f),
+                    const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f), float fov = 45.0f, float aspect = 16.0f / 9.0f,
+                    float near = 0.1f, float far = 100.0f, float speed = 5.0f, float sensitivity = 0.08f, bool fix = false);
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
     [[nodiscard]] glm::mat4 get_projection_matrix() const;
@@ -22,9 +14,9 @@ public:
     void update_orientation(const glm::vec2 &offset);
 
     // Position control
-    void set_position(const glm::vec3& position);
-    void offset_position(const glm::vec3& offset);
-    [[nodiscard]] const glm::vec3& get_position() const;
+    void set_position(const glm::vec3 &position);
+    void offset_position(const glm::vec3 &offset);
+    [[nodiscard]] const glm::vec3 &get_position() const;
     void set_speed(float speed);
     void offset_speed(float speed);
     [[nodiscard]] float get_speed() const;
@@ -32,11 +24,11 @@ public:
     [[nodiscard]] float get_sensitivity() const;
 
     // Orientation control
-    void look_at(const glm::vec3& target);
-    [[nodiscard]] const glm::vec3& get_forward() const;
-    [[nodiscard]] const glm::vec3& get_up() const;
-    [[nodiscard]] const glm::vec3& get_world_up() const;
-    [[nodiscard]] const glm::vec3& get_right() const;
+    void look_at(const glm::vec3 &target);
+    [[nodiscard]] const glm::vec3 &get_forward() const;
+    [[nodiscard]] const glm::vec3 &get_up() const;
+    [[nodiscard]] const glm::vec3 &get_world_up() const;
+    [[nodiscard]] const glm::vec3 &get_right() const;
 
     // Projection control
     void set_perspective(float fov, float aspect, float near, float far);
@@ -72,6 +64,8 @@ private:
     float m_speed;
     float m_sensitivity;
 
-    float m_yaw;
-    float m_pitch;
+    float m_yaw{};
+    float m_pitch{};
+
+    bool fix{};
 };

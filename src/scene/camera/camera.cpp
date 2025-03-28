@@ -2,9 +2,9 @@
 #include <scene/camera/camera.h>
 
 Camera::Camera(const glm::vec3 &position, const glm::vec3 &lookat, const glm::vec3 &up, float fov, float aspect,
-               float near, float far, float speed, float sensitivity)
+               float near, float far, float speed, float sensitivity, bool fix)
     : m_position(position), m_world_up(up), m_fov(fov), m_aspect(aspect), m_near(near), m_far(far), m_speed(speed),
-      m_sensitivity(sensitivity) {
+      m_sensitivity(sensitivity), fix(fix) {
     look_at(lookat);
     set_perspective(fov, aspect, near, far);
 }
@@ -14,8 +14,13 @@ glm::mat4 Camera::get_view_matrix() const { return glm::lookAt(m_position, m_pos
 glm::mat4 Camera::get_projection_matrix() const { return m_projection_matrix; }
 
 void Camera::update_orientation(const glm::vec2 &offset) {
+    if (fix) {
+        return;
+    }
+
     m_yaw += offset.x * m_sensitivity;
     m_pitch -= offset.y * m_sensitivity;
+
     m_pitch = glm::clamp(m_pitch, -89.9f, 89.9f);
 
     m_forward =

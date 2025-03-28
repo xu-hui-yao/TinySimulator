@@ -13,8 +13,8 @@
 
 void create_assets(const std::shared_ptr<Scene> &scene, entt::registry &registry) {
     const auto camera_entity = registry.create();
-    auto &camera = registry.emplace<Camera>(camera_entity, glm::vec3(0, 5, 10), glm::vec3(0), glm::vec3(0, 1, 0), 60.0f,
-                                            16.0f / 9.0f, 0.1f, 100.0f);
+    auto &camera = registry.emplace<Camera>(camera_entity, glm::vec3(10, 3, 10), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), 60.0f,
+                                            16.0f / 9.0f, 0.1f, 100.0f, 5.0f, 0.08f, true);
     scene->set_camera("main", std::make_shared<Camera>(camera));
     scene->set_main_camera("main");
 
@@ -75,7 +75,7 @@ void init_physics() {
 }
 
 int main() {
-    get_window_manager()->init("test", 2560, 1440);
+    get_window_manager()->init("test", 3840, 2160);
     init_physics();
     InputSystem::init();
 

@@ -1,3 +1,3 @@
-target_sources(tiny-renderer PRIVATE
+target_sources(tiny-simulator PRIVATE
         resource.cpp
 )
