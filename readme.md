@@ -121,7 +121,13 @@ end
 
 #### Constraint Implementations
 
-1. Maintain cloth edge elasticity:
+1. **Maintain cloth edge elasticity**:
+
+   Maintain the elastic constraints on the edge lengths of the cloth mesh, following Hooke's Law.
+   $$
+   \Delta \mathbf{p}_1 = -\frac{m_2}{m_1+m_2}(||\mathbf{p}_1-\mathbf{p}_2||-d)\frac{\mathbf{p}_1-\mathbf{p}_2}{||\mathbf{p}_1-\mathbf{p}_2||} \\
+   \Delta \mathbf{p}_2 = +\frac{m_1}{m_1+m_2}(||\mathbf{p}_1-\mathbf{p}_2||-d)\frac{\mathbf{p}_1-\mathbf{p}_2}{||\mathbf{p}_1-\mathbf{p}_2||}
+   $$
 
 2. **Bending Constraints**
 
@@ -137,6 +143,7 @@ end
    & \Delta p_i=-\frac{w_i\sqrt{1-d^2}(\arccos(d)-\phi_0)}{\sum_jw_j|q_j|^2}q_i
    \end{align}
    $$
+   
 
 3. **Collision Handling**
 
