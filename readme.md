@@ -2,10 +2,6 @@
 
 
 
-![Windows Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/windows.yml/badge.svg)![Linux Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/linux.yml/badge.svg)![macOS Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/macos.yml/badge.svg)
-
-
-
 ## Overview
 
 A lightweight physics simulation engine implemented in C++ using Entity-Component-System (ECS) architecture via [entt](https://github.com/skypjack/entt), with OpenGL-based visualization. Key features include:

@@ -2,10 +2,6 @@
 
 
 
-![Windows Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/windows.yml/badge.svg)![Linux Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/linux.yml/badge.svg)![macOS Build Status](https://github.com/xu-hui-yao/TinySimulator/actions/workflows/macos.yml/badge.svg)
-
-
-
 ## 项目概述
 
 本系统是基于C++实现的轻量级物理仿真引擎，采用[entt](https://github.com/skypjack/entt)库构建的实体组件系统（ECS）架构，并集成OpenGL可视化模块。当前实现的物理特性包括：
